@@ -2,7 +2,7 @@
   "manifest_version": 3,
   "name": "DevTab: Developer & Hacker New Tab",
   "short_name": "DevTab",
-  "version": "1.1.1",
+  "version": "1.2.0",
   "description": "A developer & hacker new tab: animated 4K backgrounds or your own video, command search, shortcuts, weather, and tasks that ring at the time you set.",
   "chrome_url_overrides": {
     "newtab": "newtab.html"
@@ -14,7 +14,8 @@
     "unlimitedStorage",
     "alarms",
     "notifications",
-    "offscreen"
+    "offscreen",
+    "bookmarks"
   ],
   "icons": {
     "16": "icons/icon16.png",
@@ -26,5 +27,9 @@
   "background": {
     "service_worker": "background.js",
     "type": "module"
-  }
+  },
+  "optional_host_permissions": [
+    "https://*/*",
+    "http://*/*"
+  ]
 }

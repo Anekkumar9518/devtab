@@ -29,6 +29,12 @@
     </div>
     <div class="bar__r">
       <div class="weather" id="weather" hidden></div>
+      <nav class="gbar" id="gbar" aria-label="Google">
+        <a href="https://mail.google.com/mail/" class="gbar__link">Gmail</a>
+        <a href="https://www.google.com/imghp" class="gbar__link">Images</a>
+        <button type="button" class="gbar__apps" id="appsBtn" aria-label="Google apps" aria-expanded="false" title="Google apps"></button>
+        <a href="https://myaccount.google.com/" class="gbar__me" id="avatar" title="Google account" aria-label="Google account"></a>
+      </nav>
       <button type="button" class="icon-btn" id="openSettings" aria-label="Settings" title="Settings"></button>
     </div>
   </header>
@@ -73,6 +79,21 @@
       <div class="pager" id="histPager"></div>
     </div>
   </aside>
+
+  <nav class="dock" id="dock" aria-label="Bookmarks" hidden></nav>
+  <div class="dock-pop" id="dockPop" hidden></div>
+  <div class="apps-pop" id="appsPop" hidden></div>
+  <div class="urlcard" id="urlCard" aria-hidden="true"></div>
+
+  <dialog class="sc-dlg" id="scDlg" aria-labelledby="scDlgT">
+    <form method="dialog" id="scForm">
+      <div class="sc-dlg__pv"><span class="sc-dlg__ic" id="scIcon"></span><div><h2 id="scDlgT">Add shortcut</h2><p id="scHost">Paste a link and give it a name</p></div></div>
+      <label class="sc-dlg__f"><span>URL</span><input name="u" id="scUrl" placeholder="https://example.com" required autocomplete="off" spellcheck="false"></label>
+      <label class="sc-dlg__f"><span>Name</span><input name="t" id="scName" placeholder="Shown under the icon" maxlength="28" autocomplete="off"></label>
+      <p class="sc-dlg__note" id="scNote">DevTab reads the site's own icon. Chrome may ask once to let it read that site; access is removed right after.</p>
+      <div class="sc-dlg__acts"><button type="button" class="btn btn--ghost" value="cancel" id="scCancel">Cancel</button><button type="submit" class="btn" id="scSave">Save</button></div>
+    </form>
+  </dialog>
 
   <p class="credit" id="credit"></p>
 

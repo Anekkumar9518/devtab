@@ -14,15 +14,18 @@ export const DEFAULTS = {
   links: "top",                      // "top" (most visited) | "custom"
   custom: [
     { t: "GitHub", u: "https://github.com" },
-    { t: "Stack Overflow", u: "https://stackoverflow.com" },
+    { t: "Stack Overflow", u: "https://stackoverflow.com", icon: "https://cdn.sstatic.net/Sites/stackoverflow/Img/apple-touch-icon.png" },
     { t: "MDN", u: "https://developer.mozilla.org" },
     { t: "YouTube", u: "https://www.youtube.com" },
-    { t: "Gmail", u: "https://mail.google.com" },
+    { t: "Gmail", u: "https://mail.google.com", icon: "https://ssl.gstatic.com/images/branding/product/2x/gmail_2020q4_48dp.png" },
     { t: "Claude", u: "https://claude.ai" },
   ],
   todos: [],
   showTodo: true,
   showWeather: true,
+  showDock: true,
+  dockFolder: "1",                  // Chrome's bookmarks bar
+  showGoogle: true,
   city: null,                        // { name, lat, lon }
   boot: true,
   dev: { bg: "aurora", accent: "#7c9cff", dim: 25, blur: 0 },

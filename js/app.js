@@ -2,6 +2,7 @@ import { load, save, onChange, putMedia, getMedia, delMedia, DEFAULTS } from "./
 import { runScene, SCENE_LIST } from "./backgrounds.js";
 import { getTasks, setTasks, getHistory, addHistory, clearHistory, newTask, act, when, TASKS, HISTORY } from "./tasks.js";
 import { renderAlert } from "./alertui.js";
+import { initLinks, drawLinks, drawDock, drawGoogle, bookmarkFolders } from "./links.js";
 
 const $ = (s, el = document) => el.querySelector(s);
 const esc = (s) => String(s).replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
@@ -18,6 +19,8 @@ const P = {
   shuffle: '<path d="M16 3h5v5M4 20 21 3M21 16v5h-5M15 15l6 6M4 4l5 5"/>',
   image: '<rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="9" cy="9" r="2"/><path d="m21 15-5-5L5 21"/>',
   square: '<rect x="4" y="4" width="16" height="16" rx="3"/>',
+  pen: '<path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4Z"/>',
+  user: '<circle cx="12" cy="8" r="4"/><path d="M4 21a8 8 0 0 1 16 0"/>',
 };
 const icon = (n) => `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${P[n]}</svg>`;
 $("#openSettings").innerHTML = icon("gear");
@@ -112,7 +115,7 @@ function applyLook() {
   $(".brand__txt").textContent = S.mode === "hacker" ? "devtab://root" : "devtab";
   $("#todoTitle").textContent = S.mode === "hacker" ? "./tasks" : "Tasks";
   $("#todo").hidden = !S.showTodo;
-  tick(true); drawGreeting();
+  tick(true); drawGreeting(); drawGoogle();
 }
 
 /* ---------- clock + greeting ---------- */
@@ -160,42 +163,6 @@ q.addEventListener("keydown", (e) => {
 });
 $("#search").addEventListener("submit", (e) => { e.preventDefault(); const r = resolve(q.value); if (r) location.href = r.url; });
 hints.addEventListener("click", (e) => { const b = e.target.closest("[data-bang]"); if (b) { q.value = b.dataset.bang + " "; q.focus(); drawHints(); } });
-
-/* ---------- shortcuts ---------- */
-const host = (u) => { try { return new URL(u).hostname.replace(/^www\./, ""); } catch (e) { return u; } };
-const favicon = (u) => ext ? chrome.runtime.getURL(`/_favicon/?pageUrl=${encodeURIComponent(u)}&size=64`) : null;
-async function drawLinks() {
-  let items = S.custom;
-  if (S.links === "top" && ext && chrome.topSites) {
-    try {
-      items = (await chrome.topSites.get()).slice(0, 8).map((x) => ({ t: x.title || host(x.url), u: x.url }));
-      // a fresh browser has few "most visited" sites yet, so top up with the default links
-      const seen = new Set(items.map((x) => host(x.u)));
-      for (const l of S.custom) if (items.length < 8 && !seen.has(host(l.u))) { items.push(l); seen.add(host(l.u)); }
-    } catch (e) { items = S.custom; }
-  }
-  const siteIcon = (u) => { try { return new URL(u).origin + "/favicon.ico"; } catch (e) { return ""; } };
-  $("#links").innerHTML = items.slice(0, 8).map((l) => {
-    const letter = esc((l.t || host(l.u)).trim().charAt(0).toUpperCase());
-    return `<a class="link" href="${esc(l.u)}" title="${esc(l.t)}"><span class="link__ic"><img src="${esc(favicon(l.u) || siteIcon(l.u))}" alt="" data-u="${esc(l.u)}" data-l="${letter}"></span><span class="link__t">${esc(l.t || host(l.u))}</span></a>`;
-  }).join("");
-  // If an icon can't load, show the site's first letter instead
-  const letterTile = (img) => { const b = document.createElement("b"); b.textContent = img.dataset.l; img.replaceWith(b); };
-  document.querySelectorAll(".link__ic img").forEach((img) => {
-    img.addEventListener("error", () => { if (!img.dataset.tried) { img.dataset.tried = "1"; img.src = siteIcon(img.dataset.u); } else letterTile(img); });
-  });
-  // Chrome returns a generic page icon for sites it hasn't cached yet; swap those for the site's own favicon
-  if (ext) {
-    try {
-      const bytes = async (u) => new Uint8Array(await (await fetch(u)).arrayBuffer());
-      const generic = await bytes(favicon("https://devtab-no-such-site.invalid/"));
-      for (const img of document.querySelectorAll(".link__ic img")) {
-        const b = await bytes(img.src);
-        if (b.length === generic.length && b.every((v, i) => v === generic[i])) { img.dataset.tried = "1"; img.src = siteIcon(img.dataset.u); }
-      }
-    } catch (e) { /* keep whatever loaded */ }
-  }
-}
 
 /* ---------- tasks, reminders and history ---------- */
 let TL = [], HIST = [], histPage = 0, whenAt = null;
@@ -406,9 +373,17 @@ function drawSettings() {
       <p class="note">Shortcuts: ${Object.entries(BANGS).map(([k, [n]]) => `<code>${k}</code> ${n}`).join(" · ")}</p>
     </section>
     <section><h3>Shortcuts</h3>
-      <div class="seg"><button type="button" data-links="top" aria-pressed="${S.links === "top"}">Most visited</button><button type="button" data-links="custom" aria-pressed="${S.links === "custom"}">My links</button></div>
-      ${S.links === "custom" ? `<ul class="mylinks">${S.custom.map((l, i) => `<li><span>${esc(l.t)}</span><small>${esc(host(l.u))}</small><button type="button" class="icon-btn" data-link-x="${i}" aria-label="Remove ${esc(l.t)}">${icon("trash")}</button></li>`).join("")}</ul>
-        <form class="addlink" data-addlink><input name="t" placeholder="Name" maxlength="24" required><input name="u" placeholder="https://…" required><button class="icon-btn" aria-label="Add link">${icon("plus")}</button></form>` : `<p class="note">${ext ? "Shows the 8 sites you open most in Chrome." : "In the extension this shows your most visited sites. The demo shows the defaults."}</p>`}
+      <div class="seg"><button type="button" data-links="top" aria-pressed="${S.links === "top"}">Most visited</button><button type="button" data-links="custom" aria-pressed="${S.links === "custom"}">My shortcuts</button></div>
+      <p class="note">Tap the <b>+</b> tile to add any link. Hover a tile to edit or remove it, and drag tiles to reorder. Editing a most-visited tile turns it into your own list.</p>
+    </section>
+    <section><h3>Bookmarks dock</h3>
+      <label class="row">Show the dock <input type="checkbox" data-t="showDock" ${S.showDock ? "checked" : ""}></label>
+      <label class="row">Folder <select data-dockfolder>${FOLDERS.map(([id, n]) => `<option value="${esc(id)}"${(S.dockFolder || "1") === id ? " selected" : ""}>${esc(n)}</option>`).join("")}</select></label>
+      ${ext ? `<button type="button" class="btn btn--ghost" data-bm-manager>Open the bookmark manager</button>` : ""}
+      <p class="note">Shows your Chrome bookmarks. Add one with Ctrl+D on any page; it appears here straight away.</p>
+    </section>
+    <section><h3>Google bar</h3>
+      <label class="row">Gmail, Images, apps &amp; account <input type="checkbox" data-t="showGoogle" ${S.showGoogle ? "checked" : ""}></label>
     </section>
     <section><h3>Widgets</h3>
       <label class="row">Tasks &amp; reminders <input type="checkbox" data-t="showTodo" ${S.showTodo ? "checked" : ""}></label>
@@ -419,7 +394,8 @@ function drawSettings() {
     <section><button type="button" class="btn btn--ghost" data-reset>Reset everything</button>
       <p class="note">DevTab is open source · <a href="https://github.com/Anekkumar9518/devtab" target="_blank" rel="noopener">github.com/Anekkumar9518/devtab</a></p></section>`;
 }
-const openSettings = () => { drawSettings(); drawer.hidden = scrim.hidden = false; requestAnimationFrame(() => drawer.classList.add("is-in")); };
+let FOLDERS = [["1", "Bookmarks bar"]];
+const openSettings = async () => { try { FOLDERS = await bookmarkFolders(); } catch (e) {} drawSettings(); drawer.hidden = scrim.hidden = false; requestAnimationFrame(() => drawer.classList.add("is-in")); };
 const closeSettings = () => { drawer.classList.remove("is-in"); setTimeout(() => { drawer.hidden = scrim.hidden = true; }, 220); };
 $("#openSettings").addEventListener("click", openSettings);
 scrim.addEventListener("click", closeSettings);
@@ -437,13 +413,14 @@ drawer.addEventListener("click", async (e) => {
   const bg = t.closest("[data-bg]");
   if (bg) { M().bg = bg.dataset.bg; await persist(); paintBackground(); drawSettings(); return; }
   if (t.closest("[data-photo]")) return newPhoto();
+  if (t.closest("[data-bm-manager]")) { try { chrome.tabs.create({ url: navigator.userAgent.includes("Edg/") ? "edge://favorites" : "chrome://bookmarks" }); } catch (e) { toast("Open chrome://bookmarks from the address bar."); } return; }
   const ln = t.closest("[data-links]");
   if (ln) { S.links = ln.dataset.links; await persist(); drawLinks(); drawSettings(); return; }
   const lx = t.closest("[data-link-x]");
   if (lx) { S.custom.splice(+lx.dataset.linkX, 1); await persist(); drawLinks(); drawSettings(); return; }
   if (t.closest("[data-reset]") && confirm("Reset all DevTab settings, links and tasks?")) {
     await delMedia("custom-dev").catch(() => {}); await delMedia("custom-hacker").catch(() => {});
-    S = structuredClone(DEFAULTS); await persist(); applyLook(); paintBackground(); drawLinks(); drawTodos(); drawWeather(); drawSettings();
+    S = structuredClone(DEFAULTS); await persist(); applyLook(); paintBackground(); drawLinks(); drawDock(); drawTodos(); drawWeather(); drawSettings();
   }
 });
 drawer.addEventListener("input", (e) => {
@@ -456,7 +433,8 @@ drawer.addEventListener("input", (e) => {
 });
 drawer.addEventListener("change", async (e) => {
   const t = e.target;
-  if (t.dataset.t) { S[t.dataset.t] = t.checked; await persist(); applyLook(); drawWeather(); }
+  if (t.dataset.t) { S[t.dataset.t] = t.checked; await persist(); applyLook(); drawWeather(); drawDock(); }
+  else if (t.matches("[data-dockfolder]")) { S.dockFolder = t.value; await persist(); drawDock(); }
   else if (t.matches("[data-engine]")) { S.engine = t.value; await persist(); drawHints(); }
   else if (t.matches("[data-upload]") && t.files[0]) {
     const f = t.files[0];
@@ -504,13 +482,15 @@ onChange((ns) => {
   if (!ns) return;
   const before = JSON.stringify([S.mode, S.dev, S.hacker, S.photo]);
   S = { ...structuredClone(DEFAULTS), ...ns, dev: { ...DEFAULTS.dev, ...ns.dev }, hacker: { ...DEFAULTS.hacker, ...ns.hacker } };
-  applyLook(); drawTodos(); drawLinks(); drawWeather();
+  applyLook(); drawTodos(); drawLinks(); drawDock(); drawWeather();
   if (JSON.stringify([S.mode, S.dev, S.hacker, S.photo]) !== before) paintBackground();
 });
 
 /* ---------- start ---------- */
+initLinks({ S: () => S, persist, toast, icon, esc });
 applyLook();
 paintBackground();
+drawDock();
 drawHints(); drawLinks(); drawWeather();
 await loadTasks(); drawTodos();
 boot();
