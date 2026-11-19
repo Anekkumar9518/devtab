@@ -28,12 +28,12 @@ A new tab page for developers, with two looks: **Developer** and **Hacker**. Ani
 
 DevTab isn't on the Chrome Web Store yet, so you load it yourself. It takes a minute:
 
-1. Download this repo (**Code → Download ZIP**) and unzip it.
+1. Download **[devtab-extension.zip](https://github.com/Anekkumar9518/devtab/releases/latest/download/devtab-extension.zip)** from the [latest release](https://github.com/Anekkumar9518/devtab/releases/latest) and unzip it.
 2. Open `chrome://extensions` (or `edge://extensions`) and turn on **Developer mode**.
 3. Click **Load unpacked** and pick the `devtab` folder.
 4. Open a new tab. If Chrome asks whether to keep the change, choose **Keep it**.
 
-**Optional: matching browser colours.** Load `themes/devtab-dev` or `themes/devtab-hacker` the same way (Load unpacked) to recolour the tabs, toolbar and address bar.
+**Optional: matching browser colours.** Get `devtab-theme-dev.zip` or `devtab-theme-hacker.zip` from the same release and load it the same way (Load unpacked) to recolour the tabs, toolbar and address bar.
 
 ## How it's built
 
