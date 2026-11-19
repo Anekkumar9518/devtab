@@ -1,0 +1,78 @@
+{
+  "manifest_version": 3,
+  "name": "DevTab Developer theme",
+  "version": "1.0.0",
+  "description": "Matches the Developer look of the DevTab new tab.",
+  "icons": {
+    "128": "icon128.png"
+  },
+  "theme": {
+    "colors": {
+      "frame": [
+        10,
+        11,
+        18
+      ],
+      "frame_inactive": [
+        16,
+        17,
+        26
+      ],
+      "toolbar": [
+        20,
+        22,
+        34
+      ],
+      "tab_text": [
+        238,
+        240,
+        246
+      ],
+      "tab_background_text": [
+        150,
+        155,
+        178
+      ],
+      "tab_background_text_inactive": [
+        120,
+        124,
+        145
+      ],
+      "bookmark_text": [
+        205,
+        210,
+        228
+      ],
+      "toolbar_button_icon": [
+        200,
+        206,
+        230
+      ],
+      "omnibox_background": [
+        12,
+        14,
+        22
+      ],
+      "omnibox_text": [
+        238,
+        240,
+        246
+      ],
+      "ntp_background": [
+        6,
+        7,
+        13
+      ],
+      "ntp_text": [
+        238,
+        240,
+        246
+      ],
+      "ntp_link": [
+        124,
+        156,
+        255
+      ]
+    }
+  }
+}

@@ -1,0 +1,391 @@
+import { load, save, onChange, putMedia, getMedia, delMedia, DEFAULTS } from "./store.js";
+import { runScene, SCENE_LIST } from "./backgrounds.js";
+
+const $ = (s, el = document) => el.querySelector(s);
+const esc = (s) => String(s).replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
+const ext = typeof chrome !== "undefined" && chrome.runtime && chrome.runtime.id;
+
+/* ---------- icons (inline, so the extension needs no remote code) ---------- */
+const P = {
+  gear: '<path d="M12 15a3 3 0 1 0 0-6 3 3 0 0 0 0 6Z"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1Z"/>',
+  x: '<path d="M18 6 6 18M6 6l12 12"/>',
+  trash: '<path d="M3 6h18M8 6V4h8v2M19 6l-1 14H6L5 6"/>',
+  plus: '<path d="M12 5v14M5 12h14"/>',
+  check: '<path d="M20 6 9 17l-5-5"/>',
+  upload: '<path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M17 8l-5-5-5 5M12 3v12"/>',
+  shuffle: '<path d="M16 3h5v5M4 20 21 3M21 16v5h-5M15 15l6 6M4 4l5 5"/>',
+  image: '<rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="9" cy="9" r="2"/><path d="m21 15-5-5L5 21"/>',
+  square: '<rect x="4" y="4" width="16" height="16" rx="3"/>',
+};
+const icon = (n) => `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${P[n]}</svg>`;
+$("#openSettings").innerHTML = icon("gear");
+
+/* ---------- search ---------- */
+const ENGINES = {
+  google: ["Google", "https://www.google.com/search?q="],
+  ddg: ["DuckDuckGo", "https://duckduckgo.com/?q="],
+  bing: ["Bing", "https://www.bing.com/search?q="],
+  brave: ["Brave", "https://search.brave.com/search?q="],
+};
+const BANGS = {
+  g: ["GitHub", "https://github.com/search?type=repositories&q="],
+  so: ["Stack Overflow", "https://stackoverflow.com/search?q="],
+  yt: ["YouTube", "https://www.youtube.com/results?search_query="],
+  npm: ["npm", "https://www.npmjs.com/search?q="],
+  mdn: ["MDN", "https://developer.mozilla.org/en-US/search?q="],
+  w: ["Wikipedia", "https://en.wikipedia.org/w/index.php?search="],
+  r: ["Reddit", "https://www.reddit.com/search/?q="],
+  maps: ["Google Maps", "https://www.google.com/maps/search/"],
+  cl: ["Claude", "https://claude.ai/new?q="],
+  gpt: ["ChatGPT", "https://chatgpt.com/?q="],
+};
+const looksLikeUrl = (q) => /^(https?:\/\/)?(localhost(:\d+)?|([\w-]+\.)+[a-z]{2,})(:\d+)?(\/\S*)?$/i.test(q) && !/\s/.test(q);
+function resolve(q) {
+  q = q.trim(); if (!q) return null;
+  if (looksLikeUrl(q)) return { url: /^https?:\/\//i.test(q) ? q : (q.startsWith("localhost") ? "http://" : "https://") + q, label: "Open " + q };
+  const m = q.match(/^(\S+)\s+(.+)$/);
+  if (m && BANGS[m[1].toLowerCase()]) { const [name, base] = BANGS[m[1].toLowerCase()]; return { url: base + encodeURIComponent(m[2]), label: `Search ${name} for “${m[2]}”` }; }
+  const [name, base] = ENGINES[S.engine] || ENGINES.google;
+  return { url: base + encodeURIComponent(q), label: `Search ${name} for “${q}”` };
+}
+
+/* ---------- state ---------- */
+let S = await load();
+let scene = null, mediaUrl = null;
+const M = () => S[S.mode];
+const persist = () => save(S);
+
+/* ---------- background ---------- */
+async function paintBackground() {
+  const canvas = $("#bgCanvas"), img = $("#bgImg"), vid = $("#bgVideo"), credit = $("#credit");
+  if (scene) { scene.stop(); scene = null; }
+  if (mediaUrl) { URL.revokeObjectURL(mediaUrl); mediaUrl = null; }
+  canvas.hidden = img.hidden = vid.hidden = true; vid.pause(); vid.removeAttribute("src"); credit.innerHTML = "";
+  document.body.style.removeProperty("--solid");
+  const bg = M().bg;
+  if (bg === "custom") {
+    const blob = await getMedia("custom-" + S.mode);
+    if (blob) {
+      mediaUrl = URL.createObjectURL(blob);
+      if (blob.type.startsWith("video/")) { vid.src = mediaUrl; vid.hidden = false; vid.play().catch(() => {}); }
+      else { img.src = mediaUrl; img.hidden = false; }
+      return;
+    }
+  } else if (bg === "photo") {
+    if (!S.photo) await newPhoto(false);
+    if (S.photo) {
+      img.src = `https://picsum.photos/id/${S.photo.id}/3840/2160`; img.hidden = false;
+      credit.innerHTML = `Photo by <a href="${esc(S.photo.url)}" target="_blank" rel="noopener">${esc(S.photo.author)}</a> on Unsplash`;
+      return;
+    }
+  } else if (bg === "solid") {
+    document.body.style.setProperty("--solid", M().solid || "#0b0d12");
+    return;
+  }
+  canvas.hidden = false;
+  scene = runScene(canvas, SCENE_LIST.some(([k]) => k === bg) ? bg : DEFAULTS[S.mode].bg, M().accent);
+}
+
+// A random 4K landscape from Picsum (Unsplash photos, free to use).
+async function newPhoto(repaint = true) {
+  try {
+    const r = await fetch(`https://picsum.photos/v2/list?page=${1 + Math.floor(Math.random() * 25)}&limit=40`);
+    const list = (await r.json()).filter((p) => p.width >= 3000 && p.width > p.height);
+    const p = list[Math.floor(Math.random() * list.length)];
+    if (p) { S.photo = { id: p.id, author: p.author, url: p.url }; await persist(); }
+  } catch (e) { toast("Couldn't reach the photo service. Check your connection."); }
+  if (repaint) paintBackground();
+}
+
+/* ---------- look ---------- */
+function applyLook() {
+  const b = document.body, m = M();
+  b.dataset.mode = S.mode;
+  b.style.setProperty("--accent", m.accent);
+  b.style.setProperty("--dim", m.dim / 100);
+  b.style.setProperty("--blur", m.blur + "px");
+  document.querySelectorAll("[data-set-mode]").forEach((x) => x.setAttribute("aria-checked", String(x.dataset.setMode === S.mode)));
+  $("#prompt").textContent = S.mode === "hacker" ? "root@devtab:~#" : "❯";
+  $("#q").placeholder = S.mode === "hacker" ? "search, open a site, or try: g react" : "Search, open a URL, or try  g react · yt lofi · so css grid";
+  $(".brand__txt").textContent = S.mode === "hacker" ? "devtab://root" : "devtab";
+  $("#todoTitle").textContent = S.mode === "hacker" ? "./tasks" : "Today";
+  $("#todo").hidden = !S.showTodo;
+  tick(true); drawGreeting();
+}
+
+/* ---------- clock + greeting ---------- */
+const pad = (n) => String(n).padStart(2, "0");
+let lastMin = -1;
+function tick(force) {
+  const d = new Date();
+  if (!force && !S.seconds && d.getMinutes() === lastMin) return;
+  lastMin = d.getMinutes();
+  let h = d.getHours(); const ap = h >= 12 ? "PM" : "AM";
+  if (!S.clock24) h = h % 12 || 12;
+  const txt = (S.clock24 ? pad(h) : h) + ":" + pad(d.getMinutes()) + (S.seconds ? ":" + pad(d.getSeconds()) : "");
+  const c = $("#clock");
+  c.dataset.text = txt;
+  c.innerHTML = `<span>${txt}</span>${S.clock24 ? "" : `<small>${ap}</small>`}`;
+  if (d.getHours() === 0 && d.getMinutes() === 0) drawGreeting();
+}
+setInterval(tick, 1000);
+function drawGreeting() {
+  const d = new Date(), h = d.getHours();
+  const part = h < 5 ? "Working late" : h < 12 ? "Good morning" : h < 17 ? "Good afternoon" : h < 22 ? "Good evening" : "Working late";
+  const date = d.toLocaleDateString(undefined, { weekday: "long", day: "numeric", month: "long" });
+  const nm = S.name ? ", " + S.name : "";
+  $("#greet").innerHTML = S.mode === "hacker"
+    ? `<span class="hk">[ ${esc(date.toLowerCase())} ]</span> access granted${esc(nm.toLowerCase())}`
+    : `<span class="cm">//</span> ${esc(part + nm)} · ${esc(date)}`;
+}
+
+/* ---------- search box ---------- */
+const q = $("#q"), hints = $("#hints");
+function drawHints() {
+  const v = q.value;
+  if (!v.trim()) {
+    hints.innerHTML = Object.entries(BANGS).slice(0, 7).map(([k, [n]]) => `<button type="button" data-bang="${k}"><b>${k}</b> ${n}</button>`).join("");
+    hints.classList.remove("is-go");
+  } else {
+    const r = resolve(v);
+    hints.innerHTML = r ? `<span>↵ ${esc(r.label)}</span><span class="dim">Ctrl ↵ opens in a new tab</span>` : "";
+    hints.classList.add("is-go");
+  }
+}
+q.addEventListener("input", drawHints);
+q.addEventListener("keydown", (e) => {
+  if (e.key === "Enter" && (e.ctrlKey || e.metaKey)) { e.preventDefault(); const r = resolve(q.value); if (r) window.open(r.url, "_blank", "noopener"); }
+});
+$("#search").addEventListener("submit", (e) => { e.preventDefault(); const r = resolve(q.value); if (r) location.href = r.url; });
+hints.addEventListener("click", (e) => { const b = e.target.closest("[data-bang]"); if (b) { q.value = b.dataset.bang + " "; q.focus(); drawHints(); } });
+
+/* ---------- shortcuts ---------- */
+const host = (u) => { try { return new URL(u).hostname.replace(/^www\./, ""); } catch (e) { return u; } };
+const favicon = (u) => ext ? chrome.runtime.getURL(`/_favicon/?pageUrl=${encodeURIComponent(u)}&size=64`) : null;
+async function drawLinks() {
+  let items = S.custom;
+  if (S.links === "top" && ext && chrome.topSites) {
+    try {
+      items = (await chrome.topSites.get()).slice(0, 8).map((x) => ({ t: x.title || host(x.url), u: x.url }));
+      // a fresh browser has few "most visited" sites yet, so top up with the default links
+      const seen = new Set(items.map((x) => host(x.u)));
+      for (const l of S.custom) if (items.length < 8 && !seen.has(host(l.u))) { items.push(l); seen.add(host(l.u)); }
+    } catch (e) { items = S.custom; }
+  }
+  const siteIcon = (u) => { try { return new URL(u).origin + "/favicon.ico"; } catch (e) { return ""; } };
+  $("#links").innerHTML = items.slice(0, 8).map((l) => {
+    const letter = esc((l.t || host(l.u)).trim().charAt(0).toUpperCase());
+    return `<a class="link" href="${esc(l.u)}" title="${esc(l.t)}"><span class="link__ic"><img src="${esc(favicon(l.u) || siteIcon(l.u))}" alt="" data-u="${esc(l.u)}" data-l="${letter}"></span><span class="link__t">${esc(l.t || host(l.u))}</span></a>`;
+  }).join("");
+  // If an icon can't load, show the site's first letter instead
+  const letterTile = (img) => { const b = document.createElement("b"); b.textContent = img.dataset.l; img.replaceWith(b); };
+  document.querySelectorAll(".link__ic img").forEach((img) => {
+    img.addEventListener("error", () => { if (!img.dataset.tried) { img.dataset.tried = "1"; img.src = siteIcon(img.dataset.u); } else letterTile(img); });
+  });
+  // Chrome returns a generic page icon for sites it hasn't cached yet; swap those for the site's own favicon
+  if (ext) {
+    try {
+      const bytes = async (u) => new Uint8Array(await (await fetch(u)).arrayBuffer());
+      const generic = await bytes(favicon("https://devtab-no-such-site.invalid/"));
+      for (const img of document.querySelectorAll(".link__ic img")) {
+        const b = await bytes(img.src);
+        if (b.length === generic.length && b.every((v, i) => v === generic[i])) { img.dataset.tried = "1"; img.src = siteIcon(img.dataset.u); }
+      }
+    } catch (e) { /* keep whatever loaded */ }
+  }
+}
+
+/* ---------- to-do ---------- */
+function drawTodos() {
+  const list = S.todos;
+  $("#todoList").innerHTML = list.map((t, i) => `<li class="${t.done ? "is-done" : ""}"><button type="button" class="todo__ck" data-todo-ck="${i}" aria-label="${t.done ? "Mark not done" : "Mark done"}">${t.done ? icon("check") : ""}</button><span>${esc(t.text)}</span><button type="button" class="todo__x" data-todo-x="${i}" aria-label="Delete task">${icon("x")}</button></li>`).join("")
+    || `<li class="todo__empty">${S.mode === "hacker" ? "no pending tasks. system idle." : "Nothing yet. What's the one thing for today?"}</li>`;
+  const left = list.filter((t) => !t.done).length;
+  $("#todoCount").textContent = list.length ? `${left} left` : "";
+}
+$("#todoForm").addEventListener("submit", (e) => {
+  e.preventDefault(); const v = $("#todoIn").value.trim(); if (!v) return;
+  S.todos.push({ text: v, done: false }); $("#todoIn").value = ""; persist(); drawTodos();
+});
+$("#todoList").addEventListener("click", (e) => {
+  const c = e.target.closest("[data-todo-ck]"), x = e.target.closest("[data-todo-x]");
+  if (c) { const t = S.todos[+c.dataset.todoCk]; t.done = !t.done; persist(); drawTodos(); }
+  if (x) { S.todos.splice(+x.dataset.todoX, 1); persist(); drawTodos(); }
+});
+
+/* ---------- weather (Open-Meteo, no key) ---------- */
+const WMO = { 0: "Clear", 1: "Mostly clear", 2: "Partly cloudy", 3: "Cloudy", 45: "Fog", 48: "Fog", 51: "Drizzle", 53: "Drizzle", 55: "Drizzle", 61: "Rain", 63: "Rain", 65: "Heavy rain", 71: "Snow", 73: "Snow", 75: "Snow", 80: "Showers", 81: "Showers", 82: "Showers", 95: "Thunderstorm", 96: "Thunderstorm", 99: "Thunderstorm" };
+async function drawWeather() {
+  const el = $("#weather");
+  el.hidden = !(S.showWeather && S.city);
+  if (el.hidden) return;
+  const key = "devtab:wx:" + S.city.lat + "," + S.city.lon;
+  let wx = null;
+  try { const c = JSON.parse(sessionStorage.getItem(key) || "null"); if (c && Date.now() - c.at < 20 * 60 * 1000) wx = c; } catch (e) {}
+  if (!wx) {
+    try {
+      const r = await fetch(`https://api.open-meteo.com/v1/forecast?latitude=${S.city.lat}&longitude=${S.city.lon}&current=temperature_2m,weather_code&timezone=auto`);
+      const j = await r.json(); wx = { t: Math.round(j.current.temperature_2m), c: j.current.weather_code, at: Date.now() };
+      sessionStorage.setItem(key, JSON.stringify(wx));
+    } catch (e) { el.hidden = true; return; }
+  }
+  el.innerHTML = `<b>${wx.t}°</b><span>${esc(WMO[wx.c] || "")} · ${esc(S.city.name)}</span>`;
+}
+
+/* ---------- hacker boot sequence ---------- */
+async function boot() {
+  if (S.mode !== "hacker" || !S.boot || matchMedia("(prefers-reduced-motion: reduce)").matches) return;
+  const last = +localStorage.getItem("devtab:boot") || 0;
+  if (Date.now() - last < 20 * 60 * 1000) return; // once every 20 minutes, not every tab
+  localStorage.setItem("devtab:boot", String(Date.now()));
+  const el = $("#boot"), pre = $("pre", el);
+  const lines = ["[ OK ] mounting /dev/focus", "[ OK ] loading kernel modules: caffeine, music", "[ OK ] decrypting session keys", "[ OK ] bypassing distractions", "[ ** ] establishing secure tunnel ...", `[ OK ] welcome back${S.name ? ", " + S.name.toLowerCase() : ""}.`];
+  el.hidden = false; pre.textContent = "";
+  for (const l of lines) { pre.textContent += l + "\n"; await new Promise((r) => setTimeout(r, 110)); }
+  await new Promise((r) => setTimeout(r, 250));
+  el.classList.add("is-out"); setTimeout(() => { el.hidden = true; el.classList.remove("is-out"); }, 400);
+}
+
+/* ---------- settings drawer ---------- */
+const drawer = $("#settings"), scrim = $("#scrim");
+function drawSettings() {
+  const m = M();
+  const sc = SCENE_LIST.map(([k, n]) => `<button type="button" class="tile${m.bg === k ? " is-on" : ""}" data-bg="${k}"><span class="tile__pv tile__pv--${k}"></span>${n}</button>`).join("");
+  drawer.innerHTML = `
+    <div class="drawer__head"><h2>Settings</h2><button type="button" class="icon-btn" data-close aria-label="Close settings">${icon("x")}</button></div>
+    <section><h3>Look</h3>
+      <div class="seg"><button type="button" data-set-mode="dev" aria-pressed="${S.mode === "dev"}">💻 Developer</button><button type="button" data-set-mode="hacker" aria-pressed="${S.mode === "hacker"}">🕶️ Hacker</button></div>
+      <p class="note">Each look keeps its own background, colour and dim level.</p></section>
+    <section><h3>Background</h3>
+      <div class="tiles">${sc}
+        <button type="button" class="tile${m.bg === "photo" ? " is-on" : ""}" data-bg="photo"><span class="tile__pv tile__pv--photo">${icon("image")}</span>4K photo</button>
+        <button type="button" class="tile${m.bg === "custom" ? " is-on" : ""}" data-bg="custom"><span class="tile__pv tile__pv--custom">${icon("upload")}</span>Your image / video</button>
+        <button type="button" class="tile${m.bg === "solid" ? " is-on" : ""}" data-bg="solid"><span class="tile__pv tile__pv--solid">${icon("square")}</span>Solid colour</button>
+      </div>
+      ${m.bg === "photo" ? `<button type="button" class="btn" data-photo>${icon("shuffle")}New random photo</button>` : ""}
+      ${m.bg === "custom" ? `<label class="btn">${icon("upload")}Choose image or video<input type="file" accept="image/*,video/*" data-upload hidden></label><p class="note">MP4 or WebM loops, or any image. It's stored in this browser only, never uploaded.</p>` : ""}
+      ${m.bg === "solid" ? `<label class="row">Colour <input type="color" data-solid value="${esc(m.solid || "#0b0d12")}"></label>` : ""}
+    </section>
+    <section><h3>Colour &amp; contrast</h3>
+      <label class="row">Accent <input type="color" data-k="accent" value="${esc(m.accent)}"></label>
+      <label class="row">Dim background <input type="range" min="0" max="80" data-k="dim" value="${m.dim}"></label>
+      <label class="row">Blur background <input type="range" min="0" max="20" data-k="blur" value="${m.blur}"></label>
+    </section>
+    <section><h3>Clock</h3>
+      <label class="row">Your name <input type="text" maxlength="24" data-name value="${esc(S.name)}" placeholder="for the greeting"></label>
+      <label class="row">24-hour clock <input type="checkbox" data-t="clock24" ${S.clock24 ? "checked" : ""}></label>
+      <label class="row">Show seconds <input type="checkbox" data-t="seconds" ${S.seconds ? "checked" : ""}></label>
+    </section>
+    <section><h3>Search</h3>
+      <label class="row">Engine <select data-engine>${Object.entries(ENGINES).map(([k, [n]]) => `<option value="${k}"${S.engine === k ? " selected" : ""}>${n}</option>`).join("")}</select></label>
+      <p class="note">Shortcuts: ${Object.entries(BANGS).map(([k, [n]]) => `<code>${k}</code> ${n}`).join(" · ")}</p>
+    </section>
+    <section><h3>Shortcuts</h3>
+      <div class="seg"><button type="button" data-links="top" aria-pressed="${S.links === "top"}">Most visited</button><button type="button" data-links="custom" aria-pressed="${S.links === "custom"}">My links</button></div>
+      ${S.links === "custom" ? `<ul class="mylinks">${S.custom.map((l, i) => `<li><span>${esc(l.t)}</span><small>${esc(host(l.u))}</small><button type="button" class="icon-btn" data-link-x="${i}" aria-label="Remove ${esc(l.t)}">${icon("trash")}</button></li>`).join("")}</ul>
+        <form class="addlink" data-addlink><input name="t" placeholder="Name" maxlength="24" required><input name="u" placeholder="https://…" required><button class="icon-btn" aria-label="Add link">${icon("plus")}</button></form>` : `<p class="note">${ext ? "Shows the 8 sites you open most in Chrome." : "In the extension this shows your most visited sites. The demo shows the defaults."}</p>`}
+    </section>
+    <section><h3>Widgets</h3>
+      <label class="row">To-do list <input type="checkbox" data-t="showTodo" ${S.showTodo ? "checked" : ""}></label>
+      <label class="row">Weather <input type="checkbox" data-t="showWeather" ${S.showWeather ? "checked" : ""}></label>
+      <form class="addlink" data-city><input name="c" placeholder="${S.city ? esc(S.city.name) : "Your city, e.g. Noida"}"><button class="btn btn--sm">Set city</button></form>
+      <label class="row">Hacker boot animation <input type="checkbox" data-t="boot" ${S.boot ? "checked" : ""}></label>
+    </section>
+    <section><button type="button" class="btn btn--ghost" data-reset>Reset everything</button>
+      <p class="note">DevTab is open source · <a href="https://github.com/Anekkumar9518/devtab" target="_blank" rel="noopener">github.com/Anekkumar9518/devtab</a></p></section>`;
+}
+const openSettings = () => { drawSettings(); drawer.hidden = scrim.hidden = false; requestAnimationFrame(() => drawer.classList.add("is-in")); };
+const closeSettings = () => { drawer.classList.remove("is-in"); setTimeout(() => { drawer.hidden = scrim.hidden = true; }, 220); };
+$("#openSettings").addEventListener("click", openSettings);
+scrim.addEventListener("click", closeSettings);
+
+async function setMode(mode) {
+  if (S.mode === mode) return;
+  S.mode = mode; await persist(); applyLook(); paintBackground(); drawTodos(); boot();
+  if (!drawer.hidden) drawSettings();
+}
+document.addEventListener("click", (e) => { const b = e.target.closest("[data-set-mode]"); if (b) setMode(b.dataset.setMode); });
+
+drawer.addEventListener("click", async (e) => {
+  const t = e.target;
+  if (t.closest("[data-close]")) return closeSettings();
+  const bg = t.closest("[data-bg]");
+  if (bg) { M().bg = bg.dataset.bg; await persist(); paintBackground(); drawSettings(); return; }
+  if (t.closest("[data-photo]")) return newPhoto();
+  const ln = t.closest("[data-links]");
+  if (ln) { S.links = ln.dataset.links; await persist(); drawLinks(); drawSettings(); return; }
+  const lx = t.closest("[data-link-x]");
+  if (lx) { S.custom.splice(+lx.dataset.linkX, 1); await persist(); drawLinks(); drawSettings(); return; }
+  if (t.closest("[data-reset]") && confirm("Reset all DevTab settings, links and tasks?")) {
+    await delMedia("custom-dev").catch(() => {}); await delMedia("custom-hacker").catch(() => {});
+    S = structuredClone(DEFAULTS); await persist(); applyLook(); paintBackground(); drawLinks(); drawTodos(); drawWeather(); drawSettings();
+  }
+});
+drawer.addEventListener("input", (e) => {
+  const t = e.target;
+  if (t.dataset.k) {
+    const k = t.dataset.k; M()[k] = k === "accent" ? t.value : +t.value; persist();
+    applyLook(); if (k === "accent") paintBackground();
+  } else if (t.matches("[data-name]")) { S.name = t.value.trim(); persist(); drawGreeting(); }
+  else if (t.matches("[data-solid]")) { M().solid = t.value; persist(); document.body.style.setProperty("--solid", t.value); }
+});
+drawer.addEventListener("change", async (e) => {
+  const t = e.target;
+  if (t.dataset.t) { S[t.dataset.t] = t.checked; await persist(); applyLook(); drawWeather(); }
+  else if (t.matches("[data-engine]")) { S.engine = t.value; await persist(); drawHints(); }
+  else if (t.matches("[data-upload]") && t.files[0]) {
+    const f = t.files[0];
+    if (!/^(image|video)\//.test(f.type)) return toast("That isn't an image or a video.");
+    if (f.size > 400 * 1024 * 1024) return toast("That file is over 400 MB. Try a shorter or smaller video.");
+    await putMedia("custom-" + S.mode, f); M().bg = "custom"; await persist(); paintBackground(); toast("Background saved in this browser.");
+  }
+});
+drawer.addEventListener("submit", async (e) => {
+  e.preventDefault(); const f = e.target;
+  if (f.matches("[data-addlink]")) {
+    let u = f.u.value.trim(); if (!/^https?:\/\//i.test(u)) u = "https://" + u;
+    S.custom.push({ t: f.t.value.trim(), u }); await persist(); drawLinks(); drawSettings();
+  } else if (f.matches("[data-city]")) {
+    const c = f.c.value.trim(); if (!c) return;
+    try {
+      const j = await (await fetch(`https://geocoding-api.open-meteo.com/v1/search?count=1&name=${encodeURIComponent(c)}`)).json();
+      const r = j.results && j.results[0];
+      if (!r) return toast("Couldn't find that city.");
+      S.city = { name: r.name, lat: +r.latitude.toFixed(3), lon: +r.longitude.toFixed(3) }; S.showWeather = true;
+      await persist(); drawWeather(); drawSettings(); toast(`Weather set to ${r.name}${r.country ? ", " + r.country : ""}.`);
+    } catch (err) { toast("The weather service didn't answer. Try again."); }
+  }
+});
+
+/* ---------- toast ---------- */
+let toastT = 0;
+function toast(msg) {
+  let t = $(".toast");
+  if (!t) { t = document.createElement("div"); t.className = "toast"; t.setAttribute("role", "status"); document.body.appendChild(t); }
+  t.textContent = msg; t.classList.add("is-on");
+  clearTimeout(toastT); toastT = setTimeout(() => t.classList.remove("is-on"), 2600);
+}
+
+/* ---------- keys ---------- */
+document.addEventListener("keydown", (e) => {
+  if (e.key === "Escape" && !drawer.hidden) return closeSettings();
+  if (e.target.closest("input, textarea, select")) return;
+  if (e.key === "/") { e.preventDefault(); q.focus(); }
+  else if (e.key.toLowerCase() === "m" && e.altKey) setMode(S.mode === "dev" ? "hacker" : "dev");
+});
+
+/* ---------- other tabs changed something ---------- */
+onChange((ns) => {
+  if (!ns) return;
+  const before = JSON.stringify([S.mode, S.dev, S.hacker, S.photo]);
+  S = { ...structuredClone(DEFAULTS), ...ns, dev: { ...DEFAULTS.dev, ...ns.dev }, hacker: { ...DEFAULTS.hacker, ...ns.hacker } };
+  applyLook(); drawTodos(); drawLinks(); drawWeather();
+  if (JSON.stringify([S.mode, S.dev, S.hacker, S.photo]) !== before) paintBackground();
+});
+
+/* ---------- start ---------- */
+applyLook();
+paintBackground();
+drawHints(); drawLinks(); drawTodos(); drawWeather();
+boot();
+if (!matchMedia("(pointer: coarse)").matches) q.focus({ preventScroll: true });

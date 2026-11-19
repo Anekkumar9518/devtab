@@ -1,0 +1,12 @@
+{
+  "manifest_version": 3,
+  "name": "DevTab: Developer & Hacker New Tab",
+  "short_name": "DevTab",
+  "version": "1.0.0",
+  "description": "A new tab for developers: animated 4K backgrounds or your own video, a command-style search, shortcuts, to-dos and weather. Two looks: Developer and Hacker.",
+  "chrome_url_overrides": { "newtab": "newtab.html" },
+  "permissions": ["storage", "topSites", "favicon", "unlimitedStorage"],
+  "icons": { "16": "icons/icon16.png", "48": "icons/icon48.png", "128": "icons/icon128.png" },
+  "author": "Anek Kumar",
+  "homepage_url": "https://github.com/Anekkumar9518/devtab"
+}

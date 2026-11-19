@@ -1,0 +1,60 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>New Tab</title>
+  <meta name="description" content="DevTab: a developer and hacker style new tab with animated 4K backgrounds, your own video, command search, shortcuts, to-dos and weather.">
+  <meta name="color-scheme" content="dark">
+  <link rel="icon" href="icons/icon48.png">
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body data-mode="dev">
+  <div class="bg" aria-hidden="true">
+    <canvas id="bgCanvas"></canvas>
+    <img id="bgImg" alt="" hidden>
+    <video id="bgVideo" muted loop playsinline autoplay hidden></video>
+    <div class="bg__dim"></div>
+    <div class="bg__fx"></div>
+  </div>
+
+  <div class="boot" id="boot" hidden aria-hidden="true"><pre></pre></div>
+
+  <header class="bar">
+    <div class="brand"><span class="brand__mark" aria-hidden="true"></span><span class="brand__txt">devtab</span></div>
+    <div class="modes" role="radiogroup" aria-label="Look">
+      <button type="button" role="radio" data-set-mode="dev">Developer</button>
+      <button type="button" role="radio" data-set-mode="hacker">Hacker</button>
+    </div>
+    <div class="bar__r">
+      <div class="weather" id="weather" hidden></div>
+      <button type="button" class="icon-btn" id="openSettings" aria-label="Settings" title="Settings"></button>
+    </div>
+  </header>
+
+  <main class="center">
+    <div class="clock" id="clock" aria-live="off"></div>
+    <p class="greet" id="greet"></p>
+    <form class="search" id="search" role="search">
+      <span class="search__prompt" id="prompt" aria-hidden="true"></span>
+      <input id="q" type="text" autocomplete="off" spellcheck="false" aria-label="Search or type a URL">
+      <kbd class="search__key" title="Press / to search">/</kbd>
+    </form>
+    <div class="hints" id="hints"></div>
+    <nav class="links" id="links" aria-label="Shortcuts"></nav>
+  </main>
+
+  <aside class="todo panel" id="todo" aria-label="To-do list">
+    <h2 class="panel__t"><span id="todoTitle">Today</span><small id="todoCount"></small></h2>
+    <form id="todoForm"><input id="todoIn" maxlength="120" placeholder="Add a task and press Enter" aria-label="New task"></form>
+    <ul id="todoList"></ul>
+  </aside>
+
+  <p class="credit" id="credit"></p>
+
+  <div class="scrim" id="scrim" hidden></div>
+  <aside class="drawer" id="settings" hidden aria-label="Settings"></aside>
+
+  <script type="module" src="js/app.js"></script>
+</body>
+</html>

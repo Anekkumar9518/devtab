@@ -1,0 +1,78 @@
+{
+  "manifest_version": 3,
+  "name": "DevTab Hacker theme",
+  "version": "1.0.0",
+  "description": "Matches the Hacker look of the DevTab new tab.",
+  "icons": {
+    "128": "icon128.png"
+  },
+  "theme": {
+    "colors": {
+      "frame": [
+        0,
+        0,
+        0
+      ],
+      "frame_inactive": [
+        0,
+        6,
+        2
+      ],
+      "toolbar": [
+        2,
+        14,
+        6
+      ],
+      "tab_text": [
+        0,
+        255,
+        102
+      ],
+      "tab_background_text": [
+        0,
+        150,
+        62
+      ],
+      "tab_background_text_inactive": [
+        0,
+        110,
+        46
+      ],
+      "bookmark_text": [
+        0,
+        220,
+        90
+      ],
+      "toolbar_button_icon": [
+        0,
+        220,
+        90
+      ],
+      "omnibox_background": [
+        0,
+        8,
+        2
+      ],
+      "omnibox_text": [
+        0,
+        255,
+        102
+      ],
+      "ntp_background": [
+        0,
+        0,
+        0
+      ],
+      "ntp_text": [
+        0,
+        255,
+        102
+      ],
+      "ntp_link": [
+        0,
+        255,
+        102
+      ]
+    }
+  }
+}
