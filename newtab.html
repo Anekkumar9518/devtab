@@ -54,6 +54,7 @@
       <form id="todoForm" class="tform" autocomplete="off">
         <div class="tform__row">
           <input id="todoIn" maxlength="140" placeholder="Add a task and press Enter" aria-label="New task">
+          <button type="submit" class="tform__add" id="addBtn" aria-label="Add task" title="Add task" hidden></button>
           <button type="button" class="tform__clock" id="whenBtn" aria-label="Set a reminder time" aria-expanded="false" title="Remind me at a time"></button>
         </div>
         <div class="tform__when" id="whenBox" hidden>
@@ -62,6 +63,7 @@
           </div>
           <label class="tform__dt"><span>Or pick</span><input type="datetime-local" id="whenAt" aria-label="Reminder date and time"></label>
           <p class="tform__sel" id="whenSel"></p>
+          <button type="submit" class="tform__go" id="whenGo" disabled></button>
         </div>
       </form>
       <ul id="todoList" class="tlist"></ul>

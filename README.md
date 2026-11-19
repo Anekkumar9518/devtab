@@ -19,7 +19,7 @@ A new tab page for developers, with two looks: **Developer** and **Hacker**. Ani
   - Plus dim and blur sliders and an accent colour picker.
 - **Search with shortcuts.** Type a URL to open it, or a shortcut first: `g` GitHub, `so` Stack Overflow, `yt` YouTube, `npm`, `mdn`, `w` Wikipedia, `r` Reddit, `maps`, `cl` Claude, `gpt` ChatGPT. Everything else goes to your engine (Google, DuckDuckGo, Bing or Brave). Press <kbd>/</kbd> to focus the box, and <kbd>Ctrl</kbd>+<kbd>Enter</kbd> to open the result in a new tab.
 - **Shortcuts.** Your most-visited sites with their real icons, or your own list of links.
-- **Tasks that ring.** Add a task, tap ⏰ and pick +15 min, +1 hour, tomorrow 9 AM or any date and time. When it's due, a ringtone loops, a window pops up over whatever you're doing, and a notification appears. Choose **Start now**, **Complete**, or **snooze** for 5, 10, 15 or 30 minutes, an hour, or a custom time. Closing the window snoozes it for 5 minutes, so nothing slips. This works on any tab, even when DevTab isn't open.
+- **Tasks that ring.** Add a task, tap ⏰, pick +15 min, +1 hour, tomorrow 9 AM or any date and time, then tap **Set reminder**. When it's due, a ringtone loops, a window pops up over whatever you're doing, and a notification appears. Choose **Start now**, **Complete**, or **snooze** for 5, 10, 15 or 30 minutes, an hour, or a custom time. Closing the window snoozes it for 5 minutes, so nothing slips. This works on any tab, even when DevTab isn't open.
 - **History** of everything you added, started, completed, snoozed or deleted, with pages.
 - **Weather** for any city.
 - **Private.** Settings, tasks and uploads stay in your browser. There are no accounts, no analytics and no remote code.

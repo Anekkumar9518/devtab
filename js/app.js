@@ -202,6 +202,17 @@ let TL = [], HIST = [], histPage = 0, whenAt = null;
 const HPER = 8;
 const CLOCK = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="13" r="8"/><path d="M12 9v4l2 2M5 3 2 6M22 6l-3-3"/></svg>';
 $("#whenBtn").innerHTML = CLOCK;
+$("#addBtn").innerHTML = icon("plus");
+function drawGo() {
+  const go = $("#whenGo"), has = $("#todoIn").value.trim().length > 0;
+  go.innerHTML = whenAt ? `${CLOCK}<span>Set reminder · <b>${esc(when(whenAt))}</b></span>` : `${CLOCK}<span>Pick a time above</span>`;
+  go.disabled = !whenAt;
+  go.classList.toggle("is-ready", !!whenAt && has);
+  // the + button is for tasks without a reminder; with the time box open, "Set reminder" does the job
+  $("#addBtn").hidden = !has || !$("#whenBox").hidden;
+}
+$("#todoIn").addEventListener("input", () => { $("#todoIn").classList.remove("is-nudge"); drawGo(); });
+drawGo();
 const fmt = (ms) => new Date(ms).toLocaleString(undefined, { day: "numeric", month: "short", hour: "numeric", minute: "2-digit" });
 
 async function loadTasks() {
@@ -246,12 +257,14 @@ function setWhen(ms) {
   $("#whenSel").innerHTML = ms ? `${CLOCK}<span>Reminds you <b>${esc(when(ms))}</b></span><button type="button" data-clear-when aria-label="Remove reminder">${icon("x")}</button>` : "";
   $("#whenBtn").classList.toggle("is-on", !!ms);
   if (ms) $("#whenAt").value = localInput(ms);
+  drawGo();
 }
 $("#whenBtn").addEventListener("click", () => {
   const box = $("#whenBox"), open = box.hidden;
   box.hidden = !open; $("#whenBtn").setAttribute("aria-expanded", String(open));
   $("#whenAt").min = localInput(Date.now());
   if (open) $("#todoIn").focus();
+  drawGo();
 });
 $("#whenBox").addEventListener("click", (e) => {
   const c = e.target.closest("[data-in]");
@@ -266,13 +279,14 @@ $("#whenAt").addEventListener("change", (e) => { setWhen(e.target.value ? new Da
 
 $("#todoForm").addEventListener("submit", async (e) => {
   e.preventDefault();
-  const v = $("#todoIn").value.trim(); if (!v) return;
+  const v = $("#todoIn").value.trim();
+  if (!v) { $("#todoIn").focus(); $("#todoIn").classList.remove("is-nudge"); void $("#todoIn").offsetWidth; $("#todoIn").classList.add("is-nudge"); return toast("Type what to be reminded about first."); }
   if (whenAt && whenAt < Date.now() - 30000) return toast("That time has already passed. Pick a time in the future.");
   const t = newTask(v, whenAt);
   TL = await getTasks(); TL.push(t); await setTasks(TL);
   await addHistory(t, "created", whenAt ? "reminder " + when(whenAt) : null);
   if (whenAt) toast(`Got it. I'll ring at ${when(whenAt)}.`);
-  $("#todoIn").value = ""; setWhen(null); $("#whenAt").value = ""; $("#whenBox").hidden = true; $("#whenBtn").setAttribute("aria-expanded", "false");
+  $("#todoIn").value = ""; setWhen(null); $("#whenAt").value = ""; $("#whenBox").hidden = true; $("#whenBtn").setAttribute("aria-expanded", "false"); drawGo();
   await loadTasks(); drawTodos();
 });
 $("#todoList").addEventListener("click", async (e) => {
