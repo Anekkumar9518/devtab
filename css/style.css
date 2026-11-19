@@ -106,7 +106,7 @@ body[data-mode="hacker"] .link__ic img { filter: grayscale(1) contrast(1.4) brig
 
 /* ---------- panels ---------- */
 .panel { background: var(--panel); border: 1px solid var(--line); border-radius: var(--r); backdrop-filter: blur(18px); -webkit-backdrop-filter: blur(18px); }
-.todo { position: fixed; left: 26px; bottom: 26px; z-index: 4; width: 300px; max-height: 42vh; display: flex; flex-direction: column; padding: 16px 16px 10px; }
+.todo { position: fixed; left: 26px; bottom: 26px; z-index: 4; width: 330px; max-height: 58vh; display: flex; flex-direction: column; padding: 16px 16px 10px; }
 .panel__t { display: flex; align-items: baseline; justify-content: space-between; margin: 0 0 10px; font-size: 14px; font-weight: 600; letter-spacing: .02em; }
 .panel__t small { font-family: var(--mono); font-weight: 400; font-size: 11.5px; color: var(--muted); }
 .todo input { width: 100%; height: 38px; padding: 0 12px; border-radius: 10px; border: 1px solid var(--line); background: rgba(0, 0, 0, .25); outline: 0; font-size: 14px; }
@@ -122,6 +122,53 @@ body[data-mode="hacker"] .link__ic img { filter: grayscale(1) contrast(1.4) brig
 .todo__x svg { width: 15px; height: 15px; }
 .todo__empty { color: var(--muted); font-size: 13px !important; border: 0 !important; }
 body[data-mode="hacker"] .todo input, body[data-mode="hacker"] .todo__ck { border-radius: 0; }
+
+/* ---------- tasks, reminders, history ---------- */
+.todo [data-pane] { display: flex; flex-direction: column; min-height: 0; }
+.todo [data-pane][hidden] { display: none; }
+.ptabs { display: flex; gap: 4px; margin: -4px -4px 10px; }
+.ptabs button { flex: 1; display: flex; align-items: center; justify-content: center; gap: 7px; padding: 7px; border-radius: 10px; font-size: 13px; font-weight: 600; color: var(--muted); }
+.ptabs button[aria-selected="true"] { background: rgba(255, 255, 255, .08); color: var(--fg); }
+.ptabs small { font-family: var(--mono); font-size: 10.5px; padding: 1px 7px; border-radius: 999px; background: color-mix(in srgb, var(--accent) 28%, transparent); color: var(--fg); }
+.ptabs small:empty { display: none; }
+.tform__row { display: flex; gap: 6px; }
+.tform__row input { flex: 1; min-width: 0; }
+.tform__clock { width: 38px; height: 38px; flex: none; display: grid; place-items: center; border-radius: 10px; border: 1px solid var(--line); color: var(--muted); }
+.tform__clock svg { width: 19px; height: 19px; }
+.tform__clock:hover, .tform__clock[aria-expanded="true"], .tform__clock.is-on { color: var(--accent); border-color: var(--accent); }
+.tform__clock.is-on { background: color-mix(in srgb, var(--accent) 16%, transparent); }
+.tform__when { display: grid; gap: 8px; margin-top: 8px; padding: 10px; border-radius: 12px; background: rgba(0, 0, 0, .22); border: 1px solid var(--line); }
+.tform__when[hidden] { display: none; }
+.tform__chips { display: flex; flex-wrap: wrap; gap: 5px; }
+.tform__chips button { padding: 5px 10px; border-radius: 999px; border: 1px solid var(--line); font-size: 12px; color: var(--muted); }
+.tform__chips button:hover { color: var(--fg); border-color: var(--accent); }
+.tform__dt { display: flex; align-items: center; gap: 8px; font-size: 12px; color: var(--muted); }
+.todo .tform__dt input { flex: 1; height: 34px; font-size: 13px; color-scheme: dark; }
+.tform__sel { display: flex; align-items: center; gap: 6px; margin: 0; font-size: 12.5px; color: var(--accent); }
+.tform__sel:empty { display: none; }
+.tform__sel span { flex: 1; } .tform__sel svg { width: 15px; height: 15px; }
+.tform__sel button { color: var(--muted); } .tform__sel button svg { width: 14px; height: 14px; }
+.tb { display: inline-flex; align-items: center; gap: 4px; margin-left: 8px; padding: 1px 8px; border-radius: 999px; font-style: normal; font-size: 11px; font-family: var(--mono); color: var(--accent); background: color-mix(in srgb, var(--accent) 15%, transparent); vertical-align: 1px; white-space: nowrap; text-decoration: none; }
+.tb svg { width: 12px; height: 12px; }
+.tb--late { color: #ff8a80; background: rgba(255, 90, 80, .15); }
+.tb--ring { color: #ffd166; background: rgba(255, 209, 102, .16); animation: blink 1s steps(1) infinite; }
+.tb--go { color: #5bd6a4; background: rgba(91, 214, 164, .14); }
+.tlist li.is-done .tlist__txt { text-decoration: line-through; color: var(--muted); }
+.tlist li.is-started .todo__ck { border-color: #5bd6a4; }
+.hlist { list-style: none; margin: 0; padding: 0; overflow-y: auto; scrollbar-width: thin; }
+.todo .hlist li { align-items: flex-start; gap: 10px; padding: 8px 2px; font-size: 13.5px; }
+.hlist li > div { flex: 1; min-width: 0; }
+.hlist b { display: block; font-weight: 500; overflow-wrap: anywhere; }
+.hlist small { display: block; margin-top: 2px; color: var(--muted); font-size: 11.5px; }
+.todo .hlist__ic { width: 24px; height: 24px; flex: none; display: grid; place-items: center; border-radius: 7px; background: rgba(255, 255, 255, .07); font-size: 10px; color: var(--muted); }
+.hlist__ic svg { width: 13px; height: 13px; }
+.h--completed .hlist__ic { color: #5bd6a4; } .h--started .hlist__ic { color: var(--accent); } .h--snoozed .hlist__ic { color: #ffd166; } .h--deleted .hlist__ic { color: #ff8a80; }
+.pager { display: flex; align-items: center; gap: 8px; margin-top: 10px; font-size: 12px; color: var(--muted); }
+.pager:empty { display: none; }
+.pager button { min-width: 30px; height: 28px; padding: 0 8px; border-radius: 8px; border: 1px solid var(--line); color: var(--fg); }
+.pager button:disabled { opacity: .35; cursor: default; }
+.pager__clear { margin-left: auto; color: var(--muted) !important; }
+body[data-mode="hacker"] .ptabs button, body[data-mode="hacker"] .tform__clock, body[data-mode="hacker"] .tform__when, body[data-mode="hacker"] .tform__chips button, body[data-mode="hacker"] .tb, body[data-mode="hacker"] .pager button { border-radius: 2px; }
 
 .credit { position: fixed; right: 26px; bottom: 22px; z-index: 3; margin: 0; font-size: 12px; color: rgba(255, 255, 255, .55); text-shadow: 0 1px 6px rgba(0, 0, 0, .8); }
 .credit a { color: rgba(255, 255, 255, .8); }

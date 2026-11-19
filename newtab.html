@@ -8,6 +8,7 @@
   <meta name="color-scheme" content="dark">
   <link rel="icon" href="icons/icon48.png">
   <link rel="stylesheet" href="css/style.css">
+  <link rel="stylesheet" href="css/alert.css">
 </head>
 <body data-mode="dev">
   <div class="bg" aria-hidden="true">
@@ -44,10 +45,31 @@
     <nav class="links" id="links" aria-label="Shortcuts"></nav>
   </main>
 
-  <aside class="todo panel" id="todo" aria-label="To-do list">
-    <h2 class="panel__t"><span id="todoTitle">Today</span><small id="todoCount"></small></h2>
-    <form id="todoForm"><input id="todoIn" maxlength="120" placeholder="Add a task and press Enter" aria-label="New task"></form>
-    <ul id="todoList"></ul>
+  <aside class="todo panel" id="todo" aria-label="Tasks and reminders">
+    <div class="ptabs" role="tablist">
+      <button type="button" role="tab" data-tab="tasks" aria-selected="true"><span id="todoTitle">Tasks</span><small id="todoCount"></small></button>
+      <button type="button" role="tab" data-tab="history" aria-selected="false">History<small id="histCount"></small></button>
+    </div>
+    <div data-pane="tasks">
+      <form id="todoForm" class="tform" autocomplete="off">
+        <div class="tform__row">
+          <input id="todoIn" maxlength="140" placeholder="Add a task and press Enter" aria-label="New task">
+          <button type="button" class="tform__clock" id="whenBtn" aria-label="Set a reminder time" aria-expanded="false" title="Remind me at a time"></button>
+        </div>
+        <div class="tform__when" id="whenBox" hidden>
+          <div class="tform__chips">
+            <button type="button" data-in="15">+15 min</button><button type="button" data-in="30">+30 min</button><button type="button" data-in="60">+1 hour</button><button type="button" data-in="tomorrow">Tomorrow 9 AM</button>
+          </div>
+          <label class="tform__dt"><span>Or pick</span><input type="datetime-local" id="whenAt" aria-label="Reminder date and time"></label>
+          <p class="tform__sel" id="whenSel"></p>
+        </div>
+      </form>
+      <ul id="todoList" class="tlist"></ul>
+    </div>
+    <div data-pane="history" hidden>
+      <ul id="histList" class="hlist"></ul>
+      <div class="pager" id="histPager"></div>
+    </div>
   </aside>
 
   <p class="credit" id="credit"></p>

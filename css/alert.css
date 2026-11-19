@@ -1,0 +1,51 @@
+/* The reminder card. Used by alert.html (its own window) and by the in-page alert on the web demo. */
+@font-face { font-family: "Space Grotesk"; src: url(../fonts/space-grotesk.woff2) format("woff2"); font-weight: 300 700; font-display: swap; }
+@font-face { font-family: "JetBrains Mono"; src: url(../fonts/jetbrains-mono.woff2) format("woff2"); font-weight: 400 800; font-display: swap; }
+
+body.al-page {
+  --accent: #7c9cff;
+  margin: 0; min-height: 100vh; display: grid; place-items: center; padding: 16px; box-sizing: border-box;
+  color: #eef0f6; font-family: "Space Grotesk", system-ui, sans-serif; -webkit-font-smoothing: antialiased;
+  background: radial-gradient(circle at 50% 0%, color-mix(in srgb, var(--accent) 35%, #0a0b12), #06070d 65%);
+}
+body.al-page[data-mode="hacker"] { background: radial-gradient(circle at 50% 0%, color-mix(in srgb, var(--accent) 18%, #000), #000 60%); }
+body.al-page #root { width: 100%; max-width: 400px; }
+
+.al { --al-accent: var(--accent, #7c9cff); display: grid; justify-items: center; text-align: center; gap: 0; width: 100%; color: #eef0f6; font-family: "Space Grotesk", system-ui, sans-serif; }
+.al *, .al *::before { box-sizing: border-box; }
+.al button, .al input { font: inherit; color: inherit; }
+.al__ring { width: 76px; height: 76px; border-radius: 50%; display: grid; place-items: center; color: #0a0a0a; background: var(--al-accent); box-shadow: 0 0 0 10px color-mix(in srgb, var(--al-accent) 18%, transparent), 0 0 50px color-mix(in srgb, var(--al-accent) 60%, transparent); animation: al-pulse 1.2s ease-in-out infinite; }
+.al__ring svg { width: 34px; height: 34px; transform-origin: 50% 10%; animation: al-shake 1.2s ease-in-out infinite; }
+@keyframes al-shake { 0%, 50%, 100% { transform: rotate(0); } 10%, 30% { transform: rotate(16deg); } 20%, 40% { transform: rotate(-16deg); } }
+@keyframes al-pulse { 50% { box-shadow: 0 0 0 18px color-mix(in srgb, var(--al-accent) 8%, transparent), 0 0 70px color-mix(in srgb, var(--al-accent) 70%, transparent); } }
+.al__k { margin: 18px 0 4px; font-family: "JetBrains Mono", monospace; font-size: 12px; letter-spacing: .1em; text-transform: uppercase; color: var(--al-accent); }
+.al__k--sm { margin-top: 22px; color: rgba(238, 240, 246, .6); }
+.al__t { margin: 4px 0 6px; font-size: clamp(22px, 6vw, 30px); line-height: 1.15; letter-spacing: -.02em; font-weight: 700; overflow-wrap: anywhere; }
+.al__d { margin: 0; font-size: 14px; color: rgba(238, 240, 246, .65); }
+.al__main { display: grid; gap: 8px; width: 100%; margin-top: 22px; }
+.al__btn { height: 52px; border-radius: 14px; border: 1px solid rgba(255, 255, 255, .16); background: rgba(255, 255, 255, .06); font-size: 16px; font-weight: 600; cursor: pointer; transition: transform .1s, background .2s; }
+.al__btn:hover { background: rgba(255, 255, 255, .12); }
+.al__btn:active { transform: scale(.98); }
+.al__btn--go { background: var(--al-accent); border-color: var(--al-accent); color: #0a0a0a; box-shadow: 0 10px 30px -10px var(--al-accent); }
+.al__btn--go:hover { background: color-mix(in srgb, var(--al-accent) 85%, #fff); }
+.al__snz { display: flex; flex-wrap: wrap; justify-content: center; gap: 6px; margin-top: 8px; }
+.al__snz button { padding: 8px 12px; border-radius: 999px; border: 1px solid rgba(255, 255, 255, .16); background: rgba(255, 255, 255, .04); font-size: 13.5px; cursor: pointer; }
+.al__snz button:hover { border-color: var(--al-accent); color: var(--al-accent); }
+.al__custom { display: flex; align-items: center; gap: 8px; margin-top: 10px; }
+.al__custom input { width: 92px; height: 38px; padding: 0 10px; border-radius: 10px; border: 1px solid rgba(255, 255, 255, .16); background: rgba(0, 0, 0, .3); outline: 0; text-align: center; }
+.al__custom input:focus { border-color: var(--al-accent); }
+.al__custom span { font-size: 13px; color: rgba(238, 240, 246, .6); }
+.al__custom button { height: 38px; padding: 0 14px; border-radius: 10px; border: 0; background: rgba(255, 255, 255, .12); font-weight: 600; cursor: pointer; }
+.al__foot { margin: 18px 0 0; font-size: 12px; color: rgba(238, 240, 246, .45); }
+.al button:disabled { opacity: .5; cursor: default; }
+
+.al--hacker, .al--hacker .al__t, .al--hacker .al__d { font-family: "JetBrains Mono", monospace; }
+.al--hacker .al__t { color: var(--al-accent); text-shadow: 0 0 14px color-mix(in srgb, var(--al-accent) 60%, transparent); font-size: clamp(20px, 5.4vw, 26px); }
+.al--hacker .al__ring { border-radius: 4px; }
+.al--hacker .al__btn, .al--hacker .al__snz button, .al--hacker .al__custom input, .al--hacker .al__custom button { border-radius: 2px; }
+
+/* in-page version (web demo) */
+.al-modal { position: fixed; inset: 0; z-index: 70; display: grid; place-items: center; padding: 20px; background: rgba(0, 0, 0, .6); backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px); }
+.al-modal__box { position: relative; width: min(420px, 100%); padding: 30px 24px 22px; border-radius: 24px; background: rgba(12, 14, 22, .92); border: 1px solid rgba(255, 255, 255, .12); box-shadow: 0 30px 90px rgba(0, 0, 0, .7); }
+.al-modal__x { position: absolute; top: 12px; right: 12px; width: 32px; height: 32px; border-radius: 50%; border: 0; background: rgba(255, 255, 255, .08); color: #fff; cursor: pointer; font-size: 18px; }
+@media (prefers-reduced-motion: reduce) { .al__ring, .al__ring svg { animation: none; } }

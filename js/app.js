@@ -1,5 +1,7 @@
 import { load, save, onChange, putMedia, getMedia, delMedia, DEFAULTS } from "./store.js";
 import { runScene, SCENE_LIST } from "./backgrounds.js";
+import { getTasks, setTasks, getHistory, addHistory, clearHistory, newTask, act, when, TASKS, HISTORY } from "./tasks.js";
+import { renderAlert } from "./alertui.js";
 
 const $ = (s, el = document) => el.querySelector(s);
 const esc = (s) => String(s).replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
@@ -108,7 +110,7 @@ function applyLook() {
   $("#prompt").textContent = S.mode === "hacker" ? "root@devtab:~#" : "❯";
   $("#q").placeholder = S.mode === "hacker" ? "search, open a site, or try: g react" : "Search, open a URL, or try  g react · yt lofi · so css grid";
   $(".brand__txt").textContent = S.mode === "hacker" ? "devtab://root" : "devtab";
-  $("#todoTitle").textContent = S.mode === "hacker" ? "./tasks" : "Today";
+  $("#todoTitle").textContent = S.mode === "hacker" ? "./tasks" : "Tasks";
   $("#todo").hidden = !S.showTodo;
   tick(true); drawGreeting();
 }
@@ -195,23 +197,132 @@ async function drawLinks() {
   }
 }
 
-/* ---------- to-do ---------- */
-function drawTodos() {
-  const list = S.todos;
-  $("#todoList").innerHTML = list.map((t, i) => `<li class="${t.done ? "is-done" : ""}"><button type="button" class="todo__ck" data-todo-ck="${i}" aria-label="${t.done ? "Mark not done" : "Mark done"}">${t.done ? icon("check") : ""}</button><span>${esc(t.text)}</span><button type="button" class="todo__x" data-todo-x="${i}" aria-label="Delete task">${icon("x")}</button></li>`).join("")
-    || `<li class="todo__empty">${S.mode === "hacker" ? "no pending tasks. system idle." : "Nothing yet. What's the one thing for today?"}</li>`;
-  const left = list.filter((t) => !t.done).length;
-  $("#todoCount").textContent = list.length ? `${left} left` : "";
+/* ---------- tasks, reminders and history ---------- */
+let TL = [], HIST = [], histPage = 0, whenAt = null;
+const HPER = 8;
+const CLOCK = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="13" r="8"/><path d="M12 9v4l2 2M5 3 2 6M22 6l-3-3"/></svg>';
+$("#whenBtn").innerHTML = CLOCK;
+const fmt = (ms) => new Date(ms).toLocaleString(undefined, { day: "numeric", month: "short", hour: "numeric", minute: "2-digit" });
+
+async function loadTasks() {
+  TL = await getTasks(); HIST = await getHistory();
+  if (S.todos && S.todos.length) { // move to-dos from the first version into tasks
+    for (const t of S.todos) { const n = newTask(t.text); if (t.done) n.status = "done"; TL.push(n); }
+    S.todos = []; await persist(); await setTasks(TL);
+  }
 }
-$("#todoForm").addEventListener("submit", (e) => {
-  e.preventDefault(); const v = $("#todoIn").value.trim(); if (!v) return;
-  S.todos.push({ text: v, done: false }); $("#todoIn").value = ""; persist(); drawTodos();
+function drawTodos() {
+  const now = Date.now();
+  const open = TL.filter((t) => t.status !== "done").sort((a, b) => (a.at || 9e15) - (b.at || 9e15) || a.created - b.created);
+  const done = TL.filter((t) => t.status === "done").sort((a, b) => (b.doneAt || 0) - (a.doneAt || 0)).slice(0, 3);
+  const badge = (t) => t.status === "ringing" ? `<em class="tb tb--ring">${CLOCK}ringing now</em>`
+    : t.status === "started" ? `<em class="tb tb--go">in progress</em>`
+    : t.status !== "done" && t.at ? `<em class="tb${t.at < now ? " tb--late" : ""}">${CLOCK}${esc(when(t.at))}</em>` : "";
+  const row = (t) => `<li class="is-${t.status}"><button type="button" class="todo__ck" data-ck="${t.id}" aria-label="${t.status === "done" ? "Mark not done" : "Mark done"}">${t.status === "done" ? icon("check") : ""}</button><span class="tlist__txt">${esc(t.text)}${badge(t)}</span><button type="button" class="todo__x" data-del="${t.id}" aria-label="Delete task">${icon("x")}</button></li>`;
+  $("#todoList").innerHTML = open.concat(done).map(row).join("")
+    || `<li class="todo__empty">${S.mode === "hacker" ? "no pending tasks. system idle." : "Nothing yet. Add a task, and tap the clock to get a reminder."}</li>`;
+  $("#todoCount").textContent = open.length ? String(open.length) : "";
+  $("#histCount").textContent = HIST.length ? String(HIST.length) : "";
+  drawHistory();
+}
+const H_LABEL = { created: "Added", started: "Started", completed: "Completed", snoozed: "Snoozed", deleted: "Deleted" };
+const H_ICON = { created: "plus", completed: "check", snoozed: "square", deleted: "trash" };
+function drawHistory() {
+  const pages = Math.max(1, Math.ceil(HIST.length / HPER));
+  histPage = Math.min(histPage, pages - 1);
+  const slice = HIST.slice(histPage * HPER, histPage * HPER + HPER);
+  $("#histList").innerHTML = slice.map((h) => `<li class="h--${h.action}"><span class="hlist__ic">${h.action === "started" ? "▶" : h.action === "snoozed" ? CLOCK : icon(H_ICON[h.action] || "check")}</span><div><b>${esc(h.text)}</b><small>${H_LABEL[h.action] || h.action}${h.extra ? " · " + esc(h.extra) : ""} · ${fmt(h.time)}</small></div></li>`).join("")
+    || `<li class="todo__empty">No history yet. Adding, starting, completing and snoozing tasks shows up here.</li>`;
+  $("#histPager").innerHTML = HIST.length > HPER
+    ? `<button type="button" data-pg="-1" ${histPage === 0 ? "disabled" : ""} aria-label="Previous page">‹</button><span>Page ${histPage + 1} of ${pages}</span><button type="button" data-pg="1" ${histPage >= pages - 1 ? "disabled" : ""} aria-label="Next page">›</button><button type="button" class="pager__clear" data-hclear>Clear</button>`
+    : HIST.length ? `<span></span><button type="button" class="pager__clear" data-hclear>Clear history</button>` : "";
+}
+
+/* the reminder time picker */
+const pad2 = (n) => String(n).padStart(2, "0");
+const localInput = (ms) => { const d = new Date(ms); return `${d.getFullYear()}-${pad2(d.getMonth() + 1)}-${pad2(d.getDate())}T${pad2(d.getHours())}:${pad2(d.getMinutes())}`; };
+function setWhen(ms) {
+  whenAt = ms;
+  $("#whenSel").innerHTML = ms ? `${CLOCK}<span>Reminds you <b>${esc(when(ms))}</b></span><button type="button" data-clear-when aria-label="Remove reminder">${icon("x")}</button>` : "";
+  $("#whenBtn").classList.toggle("is-on", !!ms);
+  if (ms) $("#whenAt").value = localInput(ms);
+}
+$("#whenBtn").addEventListener("click", () => {
+  const box = $("#whenBox"), open = box.hidden;
+  box.hidden = !open; $("#whenBtn").setAttribute("aria-expanded", String(open));
+  $("#whenAt").min = localInput(Date.now());
+  if (open) $("#todoIn").focus();
 });
-$("#todoList").addEventListener("click", (e) => {
-  const c = e.target.closest("[data-todo-ck]"), x = e.target.closest("[data-todo-x]");
-  if (c) { const t = S.todos[+c.dataset.todoCk]; t.done = !t.done; persist(); drawTodos(); }
-  if (x) { S.todos.splice(+x.dataset.todoX, 1); persist(); drawTodos(); }
+$("#whenBox").addEventListener("click", (e) => {
+  const c = e.target.closest("[data-in]");
+  if (c) {
+    if (c.dataset.in === "tomorrow") { const d = new Date(); d.setDate(d.getDate() + 1); d.setHours(9, 0, 0, 0); setWhen(d.getTime()); }
+    else setWhen(Date.now() + +c.dataset.in * 60000);
+    $("#todoIn").focus(); return;
+  }
+  if (e.target.closest("[data-clear-when]")) { setWhen(null); $("#whenAt").value = ""; }
 });
+$("#whenAt").addEventListener("change", (e) => { setWhen(e.target.value ? new Date(e.target.value).getTime() : null); });
+
+$("#todoForm").addEventListener("submit", async (e) => {
+  e.preventDefault();
+  const v = $("#todoIn").value.trim(); if (!v) return;
+  if (whenAt && whenAt < Date.now() - 30000) return toast("That time has already passed. Pick a time in the future.");
+  const t = newTask(v, whenAt);
+  TL = await getTasks(); TL.push(t); await setTasks(TL);
+  await addHistory(t, "created", whenAt ? "reminder " + when(whenAt) : null);
+  if (whenAt) toast(`Got it. I'll ring at ${when(whenAt)}.`);
+  $("#todoIn").value = ""; setWhen(null); $("#whenAt").value = ""; $("#whenBox").hidden = true; $("#whenBtn").setAttribute("aria-expanded", "false");
+  await loadTasks(); drawTodos();
+});
+$("#todoList").addEventListener("click", async (e) => {
+  const c = e.target.closest("[data-ck]"), x = e.target.closest("[data-del]");
+  if (c) { const t = TL.find((y) => y.id === c.dataset.ck); if (t) await act(t.id, t.status === "done" ? "reopen" : "complete"); }
+  if (x) { const t = TL.find((y) => y.id === x.dataset.del); if (t) { await act(t.id, "delete"); await addHistory(t, "deleted"); } }
+  if (c || x) { await loadTasks(); drawTodos(); }
+});
+$("#todo").addEventListener("click", async (e) => {
+  const tab = e.target.closest("[data-tab]");
+  if (tab) {
+    document.querySelectorAll("#todo [data-tab]").forEach((b) => b.setAttribute("aria-selected", String(b === tab)));
+    document.querySelectorAll("#todo [data-pane]").forEach((p) => { p.hidden = p.dataset.pane !== tab.dataset.tab; });
+    return;
+  }
+  const pg = e.target.closest("[data-pg]"); if (pg) { histPage += +pg.dataset.pg; drawHistory(); return; }
+  if (e.target.closest("[data-hclear]") && confirm("Clear the whole task history?")) { await clearHistory(); await loadTasks(); histPage = 0; drawTodos(); }
+});
+
+// keep the list live: the background worker and other tabs change it too
+const refreshTasks = async () => { await loadTasks(); drawTodos(); };
+if (typeof chrome !== "undefined" && chrome.storage && chrome.storage.onChanged) {
+  chrome.storage.onChanged.addListener((ch, area) => { if (area === "local" && (ch[TASKS] || ch[HISTORY])) refreshTasks(); });
+} else {
+  addEventListener("devtab-local", refreshTasks);
+  addEventListener("storage", (e) => { if (e.key === TASKS || e.key === HISTORY) refreshTasks(); });
+}
+setInterval(drawTodos, 30000); // keeps "late" badges and relative times fresh
+
+// Web demo only: there's no background worker, so this page rings and shows the alert itself.
+if (!ext) {
+  let showing = false;
+  setInterval(async () => {
+    if (showing || document.hidden) return;
+    const list = await getTasks();
+    const t = list.find((x) => x.status === "ringing") || list.find((x) => x.status === "open" && x.at && x.at <= Date.now());
+    if (!t) return;
+    showing = true; t.status = "ringing"; await setTasks(list);
+    const wrap = document.createElement("div");
+    wrap.className = "al-modal";
+    wrap.innerHTML = `<div class="al-modal__box" style="--accent:${esc(M().accent)}"><button type="button" class="al-modal__x" aria-label="Close and snooze 5 minutes">×</button><div class="al-body"></div></div>`;
+    document.body.appendChild(wrap);
+    const tone = new Audio("sounds/ring.wav"); tone.loop = true; tone.play().catch(() => {});
+    let stop = () => {};
+    const finish = async (a, m) => { tone.pause(); stop(); wrap.remove(); await act(t.id, a, m); showing = false; refreshTasks(); };
+    const onAction = (a, m) => finish(a, m); onAction.inPage = true;
+    stop = renderAlert(wrap.querySelector(".al-body"), t, S.mode, onAction);
+    wrap.querySelector(".al-modal__x").addEventListener("click", () => finish("snooze", 5));
+  }, 3000);
+}
 
 /* ---------- weather (Open-Meteo, no key) ---------- */
 const WMO = { 0: "Clear", 1: "Mostly clear", 2: "Partly cloudy", 3: "Cloudy", 45: "Fog", 48: "Fog", 51: "Drizzle", 53: "Drizzle", 55: "Drizzle", 61: "Rain", 63: "Rain", 65: "Heavy rain", 71: "Snow", 73: "Snow", 75: "Snow", 80: "Showers", 81: "Showers", 82: "Showers", 95: "Thunderstorm", 96: "Thunderstorm", 99: "Thunderstorm" };
@@ -286,7 +397,7 @@ function drawSettings() {
         <form class="addlink" data-addlink><input name="t" placeholder="Name" maxlength="24" required><input name="u" placeholder="https://…" required><button class="icon-btn" aria-label="Add link">${icon("plus")}</button></form>` : `<p class="note">${ext ? "Shows the 8 sites you open most in Chrome." : "In the extension this shows your most visited sites. The demo shows the defaults."}</p>`}
     </section>
     <section><h3>Widgets</h3>
-      <label class="row">To-do list <input type="checkbox" data-t="showTodo" ${S.showTodo ? "checked" : ""}></label>
+      <label class="row">Tasks &amp; reminders <input type="checkbox" data-t="showTodo" ${S.showTodo ? "checked" : ""}></label>
       <label class="row">Weather <input type="checkbox" data-t="showWeather" ${S.showWeather ? "checked" : ""}></label>
       <form class="addlink" data-city><input name="c" placeholder="${S.city ? esc(S.city.name) : "Your city, e.g. Noida"}"><button class="btn btn--sm">Set city</button></form>
       <label class="row">Hacker boot animation <input type="checkbox" data-t="boot" ${S.boot ? "checked" : ""}></label>
@@ -386,6 +497,7 @@ onChange((ns) => {
 /* ---------- start ---------- */
 applyLook();
 paintBackground();
-drawHints(); drawLinks(); drawTodos(); drawWeather();
+drawHints(); drawLinks(); drawWeather();
+await loadTasks(); drawTodos();
 boot();
 if (!matchMedia("(pointer: coarse)").matches) q.focus({ preventScroll: true });
