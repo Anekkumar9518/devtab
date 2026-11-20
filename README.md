@@ -11,7 +11,7 @@ A new tab page for developers, with two looks: **Developer** and **Hacker**. Con
 ## What's new in 4.0
 
 ### 🌀 3D tab carousel
-Hold your open palm still and every tab in the window spreads out in a 3D ring with a live picture of each page. Move your hand to spin it, pinch to jump to a tab, close your fist to put it away. Works with the mouse wheel and arrow keys too.
+Hold a fist and every tab in the window spreads out in 3D with a live picture of each page. Grab with an open hand and move to spin it (or hover ◀ ▶), tap a tab to jump to it, tap its ✕ to close it, or tap **＋ New tab**. Works with the mouse wheel and arrow keys too.
 
 ![The 3D tab carousel: tabs in a ring with live previews](docs/carousel.png)
 
@@ -59,20 +59,22 @@ Turn it on in the Hub and your webcam becomes a controller on **every tab**. Han
 
 | Gesture | Does |
 | --- | --- |
-| ☝️ Point | Moves a holographic cursor that locks onto links and buttons |
-| 🤏 Pinch | Click (pinch twice to double-click) |
-| 🤏 Pinch + move | Drag the page |
-| ✋ Palm up / down | Scroll |
-| ✋ Palm swipe left / right | Previous / next tab |
-| ✋ Palm held still | All your tabs in a 3D carousel |
+| ☝️ Point | Moves a smooth holographic cursor that sticks to links and buttons. Move your whole hand; the cursor follows your knuckles, so it stays steady when you tap or pinch |
+| 👆 Tap (flick your index finger down and up) | Click: opens the link, button or video under the cursor. Tap twice for a double-click |
+| 🤏 Pinch | Also clicks. Pinch and move to drag the page |
+| ✋ Open hand up / down | Scroll |
+| ✌️ Two fingers up / down | Scroll, like a trackpad |
+| ☝️ Point at the top / bottom edge | Keeps scrolling |
+| ✋ Open hand swipe left / right | Previous / next tab |
+| ✌️ Two-finger swipe left / right | Back / forward |
+| ✊ Fist (hold) | All your tabs in 3D: tap one to open it, ✕ to close it, ＋ for a new tab |
 | 👍 Thumbs up (hold) | Play / pause the video |
-| ✌️ Victory (hold) | Go back |
-| ✊ Fist (hold) | Minimize the window |
 | 🤟 Love sign (hold) | Air drawing |
 | 👎 Thumbs down (hold) | Reload |
-| 🙂 Look away | The video pauses, and plays again when you look back |
 
-Hold gestures fill a ring first, so nothing fires by accident. A HUD panel shows your tracked hand, and a side dock (Back, Forward, Reload, New tab, Close tab, Minimize) can be "air-clicked" too.
+Hold gestures fill a ring first, so nothing fires by accident. The first time you turn it on, a guide shows every move (open it again with **?** on the hand panel). A HUD panel shows your tracked hand, and a side dock (Back, Forward, Reload, 3D tabs, Draw, New tab, Close tab, Minimize) can be tapped too. Scrolling direction can be reversed in the Hub.
+
+![The Air control guide: point, tap, pinch, scroll, swipe, fist and poses](docs/air-guide.png)
 
 ![Air control on a web page: the holographic cursor locked on a link, the hand panel and the action dock](docs/air.png)
 

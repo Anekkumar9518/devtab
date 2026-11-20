@@ -69,6 +69,7 @@ chrome.runtime.onMessage.addListener((m, sender, reply) => {
       else if (a === "minimize") await chrome.windows.update(t.windowId, { state: "minimized" });
       else if (a === "newtab") await chrome.tabs.create({ windowId: t.windowId, index: t.index + 1 });
       else if (a === "close") await chrome.tabs.remove(t.id);
+      else if (a === "closetab" && m.id) await chrome.tabs.remove(m.id);
       else if (a === "mute") await chrome.tabs.update(t.id, { muted: !(t.mutedInfo && t.mutedInfo.muted) });
       else if (a === "openurl" && /^https?:\/\//i.test(m.url || "")) await chrome.tabs.create({ url: m.url, index: t.index + 1 });
       else if (a === "hub") await chrome.tabs.create({ url: chrome.runtime.getURL("newtab.html#hub"), index: t.index + 1 });

@@ -30,7 +30,7 @@
       const c = this.min + this.beta * Math.abs(this.dx); this.x += this.a(c, dt) * (x - this.x); return this.x;
     }
   }
-  const fx = new OneEuro(), fy = new OneEuro(), ffx = new OneEuro(0.8, 0.01), ffy = new OneEuro(0.8, 0.01);
+  const fx = new OneEuro(0.9, 4), fy = new OneEuro(0.9, 4), ffx = new OneEuro(0.8, 0.01), ffy = new OneEuro(0.8, 0.01);
   const CONN = [[0, 1], [1, 2], [2, 3], [3, 4], [0, 5], [5, 6], [6, 7], [7, 8], [5, 9], [9, 10], [10, 11], [11, 12], [9, 13], [13, 14], [14, 15], [15, 16], [13, 17], [0, 17], [17, 18], [18, 19], [19, 20]];
   const NAMES = { Pointing_Up: "☝ Point", Open_Palm: "✋ Palm", Closed_Fist: "✊ Fist", Thumb_Up: "👍 Thumbs up", Thumb_Down: "👎 Thumbs down", Victory: "✌ Victory", ILoveYou: "🤟 Love", None: "☝ Pointer" };
 
@@ -46,13 +46,17 @@
       :host { --c: ${acc}; --f: #ff6ad5; }
       * { box-sizing: border-box; font-family: "JetBrains Mono", Consolas, ui-monospace, monospace; }
       [hidden] { display: none !important; }
-      .cur, .fcur { position: fixed; left: 0; top: 0; width: 56px; height: 56px; margin: -28px 0 0 -28px; pointer-events: none; transition: opacity .25s; will-change: transform; z-index: 5; }
+      .cur, .fcur { position: fixed; left: 0; top: 0; width: 48px; height: 48px; margin: -24px 0 0 -24px; pointer-events: none; transition: opacity .25s; will-change: transform; z-index: 5; }
       .cur .ring { position: absolute; inset: 0; border-radius: 50%; border: 2px dashed var(--c); opacity: .8; animation: spin 4s linear infinite; box-shadow: 0 0 18px -2px var(--c); }
       .cur .ring2 { position: absolute; inset: 9px; border-radius: 50%; border: 2px solid var(--c); opacity: .55; transition: transform .15s, border-color .15s; }
       .cur .dot { position: absolute; left: 50%; top: 50%; width: 8px; height: 8px; margin: -4px; border-radius: 50%; background: var(--c); box-shadow: 0 0 12px var(--c), 0 0 3px #fff; }
       .cur .tick { position: absolute; left: 50%; top: -6px; width: 2px; height: 8px; margin-left: -1px; background: var(--c); } .cur .tick:nth-of-type(2) { top: auto; bottom: -6px; }
       .cur.hot .ring2 { transform: scale(.7); border-color: #ffd166; } .cur.hot .dot { background: #ffd166; box-shadow: 0 0 14px #ffd166; }
-      .cur.pinch .ring2 { transform: scale(.45); border-width: 3px; } .cur.palm .ring { border-style: solid; animation-duration: 1.4s; }
+      .cur.pinch .ring2, .cur.press .ring2 { transform: scale(.45); border-width: 3px; border-color: #fff; } .cur.press .dot { transform: scale(1.6); }
+      .cur.scroll .ring { border-style: solid; animation: none; } .cur.scroll .dot, .cur.scroll .tick { opacity: 0; }
+      .cur .ico { position: absolute; inset: 0; display: grid; place-items: center; color: #fff; font-size: 20px; font-weight: 700; text-shadow: 0 0 10px var(--c); opacity: 0; transition: opacity .15s; }
+      .cur.scroll .ico { opacity: 1; }
+      .cur .dot { transition: transform .12s; }
       .cur.pen .ring { border-style: solid; border-color: var(--ink, #29e7ff); } .cur.pen .dot { background: var(--ink, #29e7ff); }
       .cur.off, .fcur.off { opacity: 0; }
       .fcur .ring { position: absolute; inset: 4px; border-radius: 50%; border: 2px solid var(--f); box-shadow: 0 0 18px -2px var(--f); }
@@ -80,7 +84,7 @@
       .ph button, .dtb button { all: unset; cursor: pointer; }
       .ph button { width: 20px; height: 20px; display: grid; place-items: center; border-radius: 5px; border: 1px solid color-mix(in srgb, var(--c) 40%, transparent); font-size: 11px; color: #dff9ff; }
       canvas.sk { display: block; width: 216px; height: 150px; margin: 8px 0 6px; border-radius: 8px; background: radial-gradient(circle, rgba(41, 231, 255, .08), transparent 70%), repeating-linear-gradient(0deg, rgba(41, 231, 255, .06) 0 1px, transparent 1px 18px), repeating-linear-gradient(90deg, rgba(41, 231, 255, .06) 0 1px, transparent 1px 18px); }
-      .st { display: flex; justify-content: space-between; font-size: 11px; color: rgba(223, 249, 255, .75); } .st b { color: #fff; }
+      .st { display: flex; justify-content: space-between; gap: 8px; font-size: 11px; color: rgba(223, 249, 255, .75); } .st b { color: #fff; } .st > span:first-child { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; } .st > span:last-child { flex: none; }
       .help { position: absolute; left: 0; bottom: calc(100% + 8px); width: 310px; padding: 12px; border-radius: 12px; background: rgba(0, 10, 22, .94); border: 1px solid var(--c); font-size: 12px; line-height: 1.7; color: #dff9ff; }
       .help b { color: var(--c); }
       .dock { position: fixed; right: 14px; top: 50%; transform: translateY(-50%); display: grid; gap: 6px; padding: 8px; border-radius: 16px; background: rgba(0, 10, 22, .7); border: 1px solid color-mix(in srgb, var(--c) 50%, transparent); box-shadow: 0 0 26px -12px var(--c); pointer-events: auto; }
@@ -94,7 +98,36 @@
       .car__bg::after { content: ""; position: absolute; inset: 0; background: repeating-linear-gradient(0deg, rgba(41, 231, 255, .05) 0 1px, transparent 1px 4px); }
       .car__floor { position: absolute; left: 50%; top: 62%; width: 1400px; height: 700px; transform: translateX(-50%) rotateX(78deg); background: radial-gradient(circle, color-mix(in srgb, var(--c) 30%, transparent), transparent 60%), repeating-radial-gradient(circle, transparent 0 60px, color-mix(in srgb, var(--c) 25%, transparent) 61px 62px); border-radius: 50%; opacity: .6; pointer-events: none; }
       .car__stage { position: relative; width: 260px; height: 180px; perspective: 1500px; transform-style: preserve-3d; }
-      .car__ring { position: absolute; inset: 0; transform-style: preserve-3d; transition: transform .12s linear; }
+      .car__ring { position: absolute; inset: 0; transform-style: preserve-3d; }
+      .card__x { all: unset; position: absolute; top: 8px; right: 8px; width: 30px; height: 30px; display: grid; place-items: center; border-radius: 50%; background: rgba(0, 10, 20, .8); border: 1px solid rgba(255, 255, 255, .3); color: #fff; font-size: 14px; cursor: pointer; opacity: 0; transition: opacity .15s, background .15s, transform .15s; }
+      .card.front .card__x, .card:hover .card__x { opacity: 1; }
+      .card__x:hover, .card__x.hot { background: #ff4d6d; border-color: #ff4d6d; transform: scale(1.15); }
+      .card.hot { border-color: #ffd166; box-shadow: 0 0 50px -4px #ffd166; }
+      .car__side { all: unset; position: absolute; top: 50%; transform: translateY(-50%); width: 84px; height: 160px; display: grid; place-items: center; border-radius: 22px; background: rgba(0, 12, 24, .55); border: 1px solid color-mix(in srgb, var(--c) 45%, transparent); color: #dff9ff; font-size: 30px; cursor: pointer; transition: background .15s, transform .15s; }
+      .car__side[data-car=l] { left: 4vw; } .car__side[data-car=r] { right: 4vw; }
+      .car__side:hover, .car__side.hot { background: color-mix(in srgb, var(--c) 30%, transparent); transform: translateY(-50%) scale(1.06); }
+      .car__bar { position: absolute; left: 50%; bottom: 4%; transform: translateX(-50%); display: flex; gap: 10px; }
+      .car__bar button { all: unset; cursor: pointer; padding: 12px 20px; border-radius: 14px; background: rgba(0, 12, 24, .7); border: 1px solid var(--c); color: #dff9ff; font-size: 14px; font-weight: 700; transition: background .15s, transform .15s; }
+      .car__bar button:hover, .car__bar button.hot { background: color-mix(in srgb, var(--c) 35%, transparent); transform: scale(1.06); }
+      .edge { position: fixed; left: 0; right: 0; height: 80px; display: grid; place-items: center; pointer-events: none; opacity: 0; transition: opacity .15s; z-index: 4; }
+      .edge.t { top: 0; background: linear-gradient(color-mix(in srgb, var(--c) 35%, transparent), transparent); }
+      .edge.b { bottom: 0; background: linear-gradient(transparent, color-mix(in srgb, var(--c) 35%, transparent)); }
+      .edge i { font-style: normal; font-size: 13px; letter-spacing: .12em; color: #fff; padding: 5px 14px; border-radius: 99px; background: rgba(0, 12, 24, .7); border: 1px solid var(--c); }
+      .edge.go i { animation: nudge .6s ease-in-out infinite; } .edge.t.go i { animation-direction: reverse; }
+      @keyframes nudge { 50% { transform: translateY(5px); } }
+      .guide { position: fixed; inset: 0; z-index: 8; display: grid; place-items: center; background: rgba(0, 6, 14, .6); backdrop-filter: blur(6px); pointer-events: auto; animation: fin .3s ease; }
+      .guide__box { width: min(880px, 94vw); padding: 26px; border-radius: 26px; background: rgba(0, 12, 24, .92); border: 1px solid var(--c); box-shadow: 0 0 80px -20px var(--c); color: #dff9ff; }
+      .guide__h { display: flex; align-items: baseline; gap: 14px; flex-wrap: wrap; margin-bottom: 18px; } .guide__h b { font-size: 20px; letter-spacing: .12em; color: var(--c); } .guide__h span { font-size: 13px; opacity: .75; }
+      .guide__grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; }
+      .gt { display: grid; gap: 6px; align-content: start; padding: 14px; border-radius: 16px; background: rgba(41, 231, 255, .05); border: 1px solid color-mix(in srgb, var(--c) 25%, transparent); }
+      .gt em { font-style: normal; font-size: 30px; line-height: 1; height: 38px; font-family: "Segoe UI Emoji", "Apple Color Emoji", sans-serif; display: inline-block; }
+      .gt b { font-size: 13.5px; color: #fff; font-family: "Segoe UI", system-ui, sans-serif; } .gt small { font-size: 12px; line-height: 1.45; opacity: .75; font-family: "Segoe UI", system-ui, sans-serif; }
+      .gt.tap em { animation: tapdip 1.1s ease-in-out infinite; } @keyframes tapdip { 30% { transform: translateY(7px) scale(.94); } 45% { transform: none; } }
+      .gt.scr em { animation: updown 1.6s ease-in-out infinite; } @keyframes updown { 25% { transform: translateY(-6px); } 75% { transform: translateY(6px); } }
+      .gt.swp em { animation: side 1.4s ease-in-out infinite; } @keyframes side { 25% { transform: translateX(-8px); } 75% { transform: translateX(8px); } }
+      .guide__f { display: flex; align-items: center; justify-content: space-between; gap: 14px; margin-top: 18px; font-size: 12.5px; opacity: .9; }
+      .guide__f button { all: unset; cursor: pointer; padding: 12px 26px; border-radius: 14px; background: var(--c); color: #001018; font-weight: 800; font-size: 15px; font-family: "Segoe UI", system-ui, sans-serif; transition: transform .15s; white-space: nowrap; }
+      .guide__f button:hover, .guide__f button.hot { transform: scale(1.06); box-shadow: 0 0 30px var(--c); }
       .card { position: absolute; inset: 0; border-radius: 14px; overflow: hidden; background: rgba(0, 20, 36, .85); border: 1px solid color-mix(in srgb, var(--c) 55%, transparent); box-shadow: 0 0 30px -10px var(--c); -webkit-box-reflect: below 10px linear-gradient(transparent 55%, rgba(255, 255, 255, .22)); transition: border-color .2s, box-shadow .2s, opacity .2s; cursor: pointer; }
       .card.front { border-color: #fff; box-shadow: 0 0 50px -4px var(--c), 0 0 0 2px var(--c); }
       .card__img { height: 140px; background: #06111c center top / cover no-repeat; display: grid; place-items: center; }
@@ -125,8 +158,12 @@
     <canvas class="ink" hidden></canvas>
     <div class="dtb" hidden><b>✏ AIR DRAW</b><button class="sw on" data-ink="#29e7ff" style="background:#29e7ff;color:#29e7ff"></button><button class="sw" data-ink="#ff6ad5" style="background:#ff6ad5;color:#ff6ad5"></button><button class="sw" data-ink="#ffd166" style="background:#ffd166;color:#ffd166"></button><button class="sw" data-ink="#5bff9c" style="background:#5bff9c;color:#5bff9c"></button><button class="sw" data-ink="#ffffff" style="background:#fff;color:#fff"></button>
       <button data-d="mouse" title="Draw with the mouse too">🖱 Mouse</button><button data-d="undo">↶ Undo</button><button data-d="clear">🗑 Clear</button><button data-d="save">💾 Save</button><button data-d="done">✕ Done</button></div>
-    <div class="car" hidden><div class="car__bg"></div><div class="car__floor"></div><div class="car__stage"><div class="car__ring"></div></div><div class="car__info"><b></b><span></span></div><div class="car__hint">✋ move to spin · 🤏 pinch to open · ✊ or Esc to close</div></div>
-    <div class="cur off"><div class="ring"></div><div class="ring2"></div><div class="dot"></div><span class="tick"></span><span class="tick"></span><svg class="hold" viewBox="0 0 92 92"><circle cx="46" cy="46" r="42"/></svg><span class="hl"></span></div>
+    <div class="car" hidden><div class="car__bg"></div><div class="car__floor"></div><div class="car__stage"><div class="car__ring"></div></div><div class="car__info"><b></b><span></span></div>
+      <div class="car__hint">✋ grab and move to spin · 👆 tap a tab to open, ✕ to close it · ✊ hold to exit</div>
+      <button class="car__side" data-car="l" title="Turn left">◀</button><button class="car__side" data-car="r" title="Turn right">▶</button>
+      <div class="car__bar"><button data-car="new">＋ New tab</button><button data-car="x">✕ Exit</button></div></div>
+    <div class="edge t"><i>▲ SCROLLING UP</i></div><div class="edge b"><i>▼ SCROLLING DOWN</i></div>
+    <div class="cur off"><div class="ring"></div><div class="ring2"></div><div class="dot"></div><span class="tick"></span><span class="tick"></span><span class="ico">↕</span><svg class="hold" viewBox="0 0 92 92"><circle cx="46" cy="46" r="42"/></svg><span class="hl"></span></div>
     <div class="fcur off"><div class="ring"></div><div class="eye">👁</div><svg class="wink" viewBox="0 0 76 76"><circle cx="38" cy="38" r="35"/></svg></div>
     <div class="flash"></div>
     <nav class="dock" aria-label="Air control actions">
@@ -138,30 +175,54 @@
       <div class="ph"><i></i><b>AIR CONTROL</b><button data-help title="Gestures">?</button><button data-hide title="Hide this panel">–</button></div>
       <canvas class="sk" width="432" height="300"></canvas>
       <div class="st"><span data-g>Show your hand</span><span><b data-fps>0</b> fps · <span data-face>🙂</span></span></div>
-      <div class="help" hidden>
-        <b>☝ Point</b> move the cursor · <b>🤏 Pinch</b> click (twice: double-click)<br><b>🤏 Pinch + move</b> drag the page<br>
-        <b>✋ Palm up / down</b> scroll · <b>swipe</b> switch tab<br><b>✋ Hold still</b> all tabs in 3D<br>
-        <b>👍 Hold</b> play / pause video · <b>✌ Hold</b> back<br><b>✊ Hold</b> minimize · <b>🤟 Hold</b> air drawing<br><b>👎 Hold</b> reload · plus the gestures you taught
-      </div>
     </div>
+    <div class="guide" hidden><div class="guide__box">
+      <div class="guide__h"><b>✋ AIR CONTROL</b><span>Your hand is the mouse. Sit an arm's length from the camera, raise your hand and try these:</span></div>
+      <div class="guide__grid">
+        <div class="gt"><em>☝️</em><b>Point to move</b><small>Move your whole hand, not just the finger. The cursor glides and sticks to links.</small></div>
+        <div class="gt tap"><em>👆</em><b>Tap to click</b><small>Flick your index finger down and up, like pressing a button. Tap twice for a double-click.</small></div>
+        <div class="gt"><em>🤏</em><b>Or pinch to click</b><small>Touch thumb and index finger. Pinch and move to drag the page.</small></div>
+        <div class="gt scr"><em>✋</em><b>Open hand up / down</b><small>Scrolls the page. Two fingers ✌️ scroll too, like a trackpad.</small></div>
+        <div class="gt scr"><em>☝️</em><b>Point at the edge</b><small>Hold the cursor at the top or bottom of the screen to keep scrolling.</small></div>
+        <div class="gt swp"><em>✋</em><b>Swipe sideways</b><small>Open hand: next / previous tab. Two fingers ✌️: back / forward.</small></div>
+        <div class="gt"><em>✊</em><b>Hold a fist</b><small>All your tabs in 3D. Tap one to open it, ✕ to close it, or ＋ for a new tab.</small></div>
+        <div class="gt"><em>👍</em><b>Hold a pose</b><small>👍 play / pause video · 🤟 air drawing · 👎 reload · plus poses you teach DevTab.</small></div>
+      </div>
+      <div class="guide__f"><span>A ring fills while you hold a pose, so nothing fires by accident. Open this guide again with <b>?</b> on the hand panel.</span><button data-guide-ok>Got it · let's go</button></div>
+    </div></div>
     <div class="guard" hidden><div class="guard__box"><span class="guard__eye">👀</span><b></b><span class="guard__txt"></span><div class="guard__clock" hidden></div></div></div>`;
     ui = {
       root: r, cur: r.querySelector(".cur"), fcur: r.querySelector(".fcur"), lock: r.querySelector(".lock"), flash: r.querySelector(".flash"), hold: r.querySelector(".hold circle"), hl: r.querySelector(".hl"),
       wink: r.querySelector(".wink circle"), cv: r.querySelector("canvas.sk"), g: r.querySelector("[data-g]"), fps: r.querySelector("[data-fps]"), face: r.querySelector("[data-face]"),
       dock: r.querySelector(".dock"), panel: r.querySelector(".panel"), car: r.querySelector(".car"), ring: r.querySelector(".car__ring"), info: r.querySelector(".car__info"),
       ink: r.querySelector("canvas.ink"), dtb: r.querySelector(".dtb"), guard: r.querySelector(".guard"),
+      edgeT: r.querySelector(".edge.t"), edgeB: r.querySelector(".edge.b"), guide: r.querySelector(".guide"),
     };
     ui.panel.hidden = !cfg.air || cfg.airPanel === false; ui.dock.hidden = !cfg.air;
-    r.querySelector("[data-help]").onclick = () => { const h = r.querySelector(".help"); h.hidden = !h.hidden; };
+    r.querySelector("[data-help]").onclick = () => showGuide(ui.guide.hidden);
+    r.querySelector("[data-guide-ok]").onclick = () => showGuide(false);
     r.querySelector("[data-hide]").onclick = () => { ui.panel.hidden = true; };
     ui.dock.addEventListener("click", (e) => { const b = e.target.closest("[data-a]"); if (b) act(b.dataset.a); });
     ui.dtb.addEventListener("click", (e) => drawButton(e.target.closest("button")));
-    ui.car.addEventListener("click", (e) => { const c = e.target.closest(".card"); if (c) pickTab(+c.dataset.id); else if (e.target.closest(".car__bg")) closeCarousel(); });
+    ui.car.addEventListener("click", (e) => {
+      const x = e.target.closest("[data-close]"); if (x) { e.stopPropagation(); return closeTabInCarousel(+x.dataset.close); }
+      const b = e.target.closest("[data-car]");
+      if (b) { const k = b.dataset.car; if (k === "l" || k === "r") { car.rot += (k === "l" ? 1 : -1) * car.step; car.vel = 0; } else if (k === "new") { closeCarousel(); act("newtab"); } else closeCarousel(); return; }
+      const c = e.target.closest(".card"); if (c) return pickTab(+c.dataset.id);
+      if (e.isTrusted && e.target.closest(".car__bg")) closeCarousel();
+    });
     ui.car.addEventListener("wheel", (e) => { e.preventDefault(); car.rot -= e.deltaY * 0.25; spin(); }, { passive: false });
     setupInk();
+    cancelAnimationFrame(raf); raf = requestAnimationFrame(loop);
     chrome.runtime.sendMessage({ type: "cam-state?" }).then(guard).catch(() => {});
+    if (cfg.air && !cfg.airGuided && !EXT_PAGE) showGuide(true); // the first time: how it works
   }
-  function teardown() { if (host) host.remove(); host = null; ui = null; }
+  function teardown() { cancelAnimationFrame(raf); if (host) host.remove(); host = null; ui = null; }
+  async function showGuide(on) {
+    if (!ui) return;
+    ui.guide.hidden = !on;
+    if (!on && !cfg.airGuided) { cfg.airGuided = true; const k = "devtab:settings", s = (await chrome.storage.local.get(k))[k] || {}; s.fx = { ...(s.fx || {}), airGuided: true }; await chrome.storage.local.set({ [k]: s }); }
+  }
   const ensure = () => { if (!ui) build(); return ui; };
 
   let flashT = 0;
@@ -186,31 +247,52 @@
     else if (a === "bottom") { scrollTo({ top: document.documentElement.scrollHeight, behavior: "smooth" }); flash("⤓ Bottom"); }
     else if (a === "carousel") openCarousel();
     else if (a === "draw") toggleDraw();
+    else if (a === "carclose") { closeCarousel(); flash("✊ Closed"); }
+    else if (a === "guide") showGuide(true);
     else { flash(BG_LABEL[a] || a); chrome.runtime.sendMessage({ type: "air-act", act: a, ...extra }).catch(() => {}); }
   }
   const CLICKABLE = 'a[href], button, input, select, textarea, summary, label, video, [role="button"], [role="link"], [role="tab"], [role="menuitem"], [onclick], [tabindex]:not([tabindex="-1"])';
   function under(x, y) {
     let el = document.elementFromPoint(x, y);
-    if (el === host) return { mine: ui.root.elementFromPoint(x, y) };
+    if (el === host) {
+      let mine = ui.root.elementFromPoint(x, y);
+      // the browser doesn't hit-test the 3D cards reliably, so check their on-screen boxes, nearest first
+      if (car.open && mine && mine.closest && !mine.closest("button")) {
+        const inBox = (e) => { const r = e.getBoundingClientRect(); return x >= r.left && x <= r.right && y >= r.top && y <= r.bottom; };
+        const cards = [...ui.ring.querySelectorAll(".card")].filter((c) => c.style.pointerEvents !== "none").sort((a, b) => +b.style.zIndex - +a.style.zIndex);
+        const c = cards.find(inBox); if (c) { const xb = c.querySelector(".card__x"); mine = xb && inBox(xb) ? xb : c; }
+      }
+      return { mine };
+    }
     while (el && el.shadowRoot && el.shadowRoot.elementFromPoint) { const inner = el.shadowRoot.elementFromPoint(x, y); if (!inner || inner === el) break; el = inner; }
     return { el };
   }
   function click(x, y, dbl) {
+    const p = target(x, y); x = p.x; y = p.y;
     ripple(x, y);
-    const u = under(x, y);
-    if (u.mine) { const b = u.mine.closest && u.mine.closest("button, .card"); if (b) b.click(); return; }
-    const el = u.el; if (!el) return;
+    if (p.mine) { const b = p.mine.closest && p.mine.closest("button, .card"); if (b) b.click(); return; }
+    const el = p.el; if (!el) return;
     const o = { bubbles: true, cancelable: true, composed: true, clientX: x, clientY: y, view: window, button: 0 };
     el.dispatchEvent(new PointerEvent("pointerdown", { ...o, pointerType: "mouse", isPrimary: true }));
     el.dispatchEvent(new MouseEvent("mousedown", o));
-    const target = el.closest(CLICKABLE) || el;
-    if (target.matches && target.matches("input, textarea, select, [contenteditable]")) target.focus();
+    const t = p.t || el.closest(CLICKABLE) || el;
+    if (t.matches && t.matches("input, textarea, select, [contenteditable]")) t.focus();
     el.dispatchEvent(new PointerEvent("pointerup", { ...o, pointerType: "mouse", isPrimary: true }));
     el.dispatchEvent(new MouseEvent("mouseup", o));
-    if (target.tagName === "VIDEO") { playVideo(); return; }
-    target.click();
+    if (t.tagName === "VIDEO") { playVideo(); return; }
+    // links that open a new tab would be stopped as a pop-up, so DevTab opens them itself
+    const a = t.closest && t.closest("a[href]");
+    if (a && a.target === "_blank" && /^https?:/i.test(a.href)) { chrome.runtime.sendMessage({ type: "air-act", act: "openurl", url: a.href }).catch(() => {}); flash("↗ Opening in a new tab"); return; }
+    t.click();
     if (dbl) el.dispatchEvent(new MouseEvent("dblclick", { ...o, detail: 2 }));
   }
+  function dblAt(x, y) {
+    const p = target(x, y); ripple(p.x, p.y);
+    if (p.mine || !p.el) return;
+    p.el.dispatchEvent(new MouseEvent("dblclick", { bubbles: true, cancelable: true, composed: true, clientX: p.x, clientY: p.y, view: window, button: 0, detail: 2 }));
+  }
+  let hlT = 0;
+  function flash2(text) { if (!ui) return; ui.hl.textContent = text; ui.hl.classList.add("on"); clearTimeout(hlT); hlT = setTimeout(() => ui && !st.hold && ui.hl.classList.remove("on"), 700); }
   function scrollAt(x, y, dy) {
     let el = under(x, y).el;
     while (el && el !== document.body && el !== document.documentElement) {
@@ -237,25 +319,66 @@
   }
 
   /* ---------- hand gestures ---------- */
-  const st = { armed: false, handGone: 0, shownAt: performance.now(), hist: [], pinch: false, pStart: 0, pPos: null, pMid: null, drag: false, lastClick: 0, lastClickPos: null, hold: null, holdT: 0, fired: null, swipeCool: 0, palmHist: [], lastHand: 0 };
-  const HOLDS = { Thumb_Up: ["playpause", 600, "👍 Play / pause"], Victory: ["back", 800, "✌ Back"], Closed_Fist: ["minimize", 1000, "✊ Minimize"], ILoveYou: ["draw", 800, "🤟 Air drawing"], Thumb_Down: ["reload", 1000, "👎 Reload"], PalmHold: ["carousel", 900, "✋ All tabs"] };
+  // The cursor follows your knuckles, not your fingertip, so tapping or
+  // pinching doesn't shake it. Each camera frame is filtered, and a loop at the
+  // screen's own frame rate glides the cursor there, so it moves smoothly
+  // instead of jumping 30 times a second.
+  const st = {
+    armed: false, handGone: 0, shownAt: performance.now(), lastHand: 0, fired: null, hold: null, holdT: 0,
+    tx: null, ty: null, px: null, py: null, pHist: [], mode: "point", hot: false, lockT: 0,
+    pinch: false, pStart: 0, pPos: null, pMid: null, drag: false,
+    rHist: [], tap: null, lastTap: 0, lastTapPos: null, aHist: [],
+    sPrev: null, sHist: [], freeze: null, v: 0, q: 0, scrollEl: null, swipeCool: 0, edgeT: 0, edgeEl: null,
+  };
+  const HOLDS = {
+    Closed_Fist: ["carousel", 650, "✊ All tabs in 3D"], Thumb_Up: ["playpause", 700, "👍 Play / pause"],
+    ILoveYou: ["draw", 800, "🤟 Air drawing"], Thumb_Down: ["reload", 1000, "👎 Reload"],
+  };
 
-  function setHold(name, now, custom) {
+  function setHold(name, now, spec) {
     if (name && !st.armed) name = null;
     if (!name) { st.hold = null; ui.hold.style.strokeDashoffset = "264"; ui.hl.classList.remove("on"); return; }
     if (st.fired === name) return; // done already; change pose to do it again
     if (st.hold !== name) { st.hold = name; st.holdT = now; }
-    const [a, dur, label] = custom ? [custom.action, 700, "★ " + custom.name] : HOLDS[name], k = clamp((now - st.holdT) / dur, 0, 1);
+    const [a, dur, label, extra] = spec || HOLDS[name], k = clamp((now - st.holdT) / dur, 0, 1);
     ui.hold.style.strokeDashoffset = String(264 * (1 - k));
     ui.hl.textContent = label; ui.hl.classList.add("on");
-    if (k >= 1) { st.fired = name; setHold(null); custom ? act(custom.action, { url: custom.url, name: "gesture" }) : act(a); }
+    if (k >= 1) { st.fired = name; setHold(null); act(a, extra || {}); }
   }
+
+  // scrolling is queued and played out smoothly by the frame loop
+  const scrollDir = () => (cfg.airScrollFlip ? -1 : 1);
+  function scrollable(x, y) {
+    let el = under(x, y).el;
+    while (el && el !== document.body && el !== document.documentElement) {
+      const cs = getComputedStyle(el);
+      if (/(auto|scroll)/.test(cs.overflowY) && el.scrollHeight > el.clientHeight + 4) return el;
+      el = el.parentElement;
+    }
+    return null; // the page itself
+  }
+  const scrollNow = (el, dy) => (el && el.isConnected ? el : window).scrollBy({ top: dy, behavior: "instant" });
+  function endScroll(fling) {
+    if (st.sPrev && fling && Math.abs(st.v) > 4) st.q = clamp(st.q + st.v * 7, -2500, 2500); // a little momentum
+    st.sPrev = null; st.v = 0; st.sHist = []; st.freeze = null;
+  }
+
+  // a tap (or pinch) clicks; a second one on the same spot within half a second is a double-click
+  function tapAt(p) {
+    const now = performance.now();
+    if (now - st.lastTap < 520 && st.lastTapPos && Math.hypot(p[0] - st.lastTapPos[0], p[1] - st.lastTapPos[1]) < 60) {
+      dblAt(st.lastTapPos[0], st.lastTapPos[1]); st.lastTap = 0; flash2("👆👆 Double tap");
+    } else { click(p[0], p[1]); st.lastTap = now; st.lastTapPos = p; }
+  }
+  const posAgo = (ms) => { const t = performance.now() - ms; let best = st.pHist[st.pHist.length - 1]; for (let i = st.pHist.length - 1; i >= 0; i--) { best = st.pHist[i]; if (st.pHist[i][2] <= t) break; } return best ? [best[0], best[1]] : [st.px, st.py]; };
 
   function handFrame(m, now) {
     const lm = m.lm;
     if (!lm) {
       if (st.lastHand && !st.handGone) st.handGone = now;
-      ui.cur.classList.add("off"); ui.lock.classList.remove("on"); setHold(null); if (draw.on && st.pinch) endStroke(); st.pinch = false; st.drag = false; st.fired = null;
+      endScroll(false); ui.cur.classList.add("off"); ui.lock.classList.remove("on"); setHold(null);
+      if (draw.on && st.pinch) endStroke();
+      st.pinch = false; st.drag = false; st.fired = null; st.tap = null; st.rHist = []; st.aHist = []; car.gx = null;
       ui.g.textContent = "Show your hand"; return false;
     }
     if (st.handGone && now - st.handGone > 500) st.armed = true;
@@ -264,115 +387,218 @@
     const size = d(0, 9) || 0.1, ext = (t, p) => d(t, 0) > d(p, 0) * 1.08;
     const f = { i: ext(8, 6), m: ext(12, 10), r: ext(16, 14), p: ext(20, 18) };
     const pr = d(4, 8) / size;
-    const g = m.gs > 0.55 ? m.g : "None";
-    const palm = g === "Open_Palm" || (f.i && f.m && f.r && f.p && pr > 0.7);
-    const mine = !palm && !st.pinch ? myMatch(lm) : null;
-    const key = mine ? "my:" + mine.id : palm ? "PalmHold" : g;
+    const g = m.gs > 0.5 ? m.g : "None";
+    const palm = g === "Open_Palm" || (f.i && f.m && f.r && f.p && pr > 0.55);
+    const two = !palm && (g === "Victory" || (f.i && f.m && !f.r && !f.p && pr > 0.4));
+    const mine = !st.pinch && !palm ? myMatch(lm) : null;
+    const posed = !!mine || ["Closed_Fist", "Thumb_Up", "Thumb_Down", "ILoveYou"].includes(g);
+    const key = mine ? "my:" + mine.id : g;
     if (st.fired && st.fired !== key) st.fired = null;
-    if (!st.armed && ((!palm && !HOLDS[g] && !mine) || now - st.shownAt > 2500)) st.armed = true;
+    if (!st.armed && ((!HOLDS[g] && !mine) || now - st.shownAt > 2500)) st.armed = true;
 
-    // cursor from the index fingertip, mapped from a comfortable box in the camera view
-    const sp = cfg.airSpeed || 1, bw = 0.62 / sp, bh = 0.56 / sp, bx = 0.5 - bw / 2, by = 0.42 - bh / 2;
-    const cx = fx.f(clamp((lm[8][0] - bx) / bw, 0, 1) * innerWidth, now), cy = fy.f(clamp((lm[8][1] - by) / bh, 0, 1) * innerHeight, now);
-    st.hist.push([cx, cy, now]); if (st.hist.length > 8) st.hist.shift();
+    // where the cursor should be: index + middle knuckles, mapped from a comfortable box in the camera view
+    const ax = lm[5][0] * 0.6 + lm[9][0] * 0.4, ay = lm[5][1] * 0.6 + lm[9][1] * 0.4;
+    st.aHist.push([ax, ay, now]); while (st.aHist.length > 1 && now - st.aHist[0][2] > 260) st.aHist.shift();
+    const sp = cfg.airSpeed || 1, bw = 0.46 / sp, bh = 0.38 / sp, bx = 0.5 - bw / 2, by = 0.56 - bh / 2;
+    let tx = fx.f(clamp((ax - bx) / bw, 0, 1), now) * innerWidth, ty = fy.f(clamp((ay - by) / bh, 0, 1), now) * innerHeight;
+    if (st.tx !== null && !st.freeze && Math.hypot(tx - st.tx, ty - st.ty) < 1.5) { tx = st.tx; ty = st.ty; } // ignore the tiniest shimmer
+    if (st.px === null) { st.px = tx; st.py = ty; }
+    const o = st.aHist[0], still = Math.hypot(ax - o[0], ay - o[1]) < 0.03;
 
-    const posed = ["Closed_Fist", "Thumb_Up", "Thumb_Down", "Victory", "ILoveYou"].includes(g) || !!mine;
+    // pinch: thumb meets index finger
     let pinchStart = false, pinchEnd = false;
-    if (!st.pinch && pr < 0.32 && !palm && !posed) { st.pinch = true; pinchStart = true; st.pStart = now; st.drag = false; const old = st.hist[Math.max(0, st.hist.length - 4)]; st.pPos = [old[0], old[1]]; st.pMid = [(lm[4][0] + lm[8][0]) / 2, (lm[4][1] + lm[8][1]) / 2]; }
-    else if (st.pinch && (pr > 0.46 || posed)) { st.pinch = false; pinchEnd = !posed; }
+    if (!st.pinch && pr < 0.3 && !palm && !two && !posed) { st.pinch = true; pinchStart = true; st.pStart = now; st.drag = false; st.pPos = [st.px, st.py]; st.pMid = [(lm[4][0] + lm[8][0]) / 2, (lm[4][1] + lm[8][1]) / 2]; st.tap = null; }
+    else if (st.pinch && (pr > 0.45 || posed)) { st.pinch = false; pinchEnd = !posed; }
 
-    // the carousel and drawing take over the hand while they're open
-    if (car.open) return carouselHand(lm, g, palm, cx, pinchStart, now);
-    if (draw.on && drawHand(cx, cy, pinchStart, pinchEnd, now)) return true;
+    // air tap: flick the index finger down (like pressing a button) and back up
+    const r = d(8, 5) / size;
+    st.rHist.push([r, now]); while (st.rHist.length > 1 && now - st.rHist[0][1] > 450) st.rHist.shift();
+    let tapped = null;
+    if (!st.pinch && !palm && !two && !posed) {
+      const top = Math.max(...st.rHist.map((h) => h[0]));
+      if (!st.tap) {
+        if (top > 0.42 && r < top * 0.74 && still && !f.m) { st.tap = { t: now, min: r, top, at: posAgo(160) }; ui.cur.classList.add("press"); }
+      } else {
+        st.tap.min = Math.min(st.tap.min, r);
+        if (r > st.tap.min + (st.tap.top - st.tap.min) * 0.45) { if (now - st.tap.t < 650) tapped = st.tap.at; st.tap = null; }
+        else if (now - st.tap.t > 650) st.tap = null; // it stayed bent: that's a fist, not a tap
+      }
+    } else st.tap = null;
+    if (!st.tap) ui.cur.classList.remove("press");
 
-    if (pinchEnd && !st.drag && now - st.pStart < 650) {
-      const dbl = now - st.lastClick < 500 && st.lastClickPos && Math.hypot(st.pPos[0] - st.lastClickPos[0], st.pPos[1] - st.lastClickPos[1]) < 50;
-      click(st.pPos[0], st.pPos[1], dbl); st.lastClick = dbl ? 0 : now; st.lastClickPos = st.pPos;
+    const mode = st.pinch ? (st.drag ? "drag" : "pinch") : mine ? "mine" : palm || two ? "scroll" : HOLDS[g] ? "hold" : "point";
+    st.mode = mode;
+
+    // the target the frame loop glides to
+    if (mode === "scroll" && !car.open) { if (!st.freeze) st.freeze = [st.px, st.py]; st.tx = st.freeze[0]; st.ty = st.freeze[1]; }
+    else if (st.pinch && !st.drag && !draw.on) { st.tx = st.pPos[0]; st.ty = st.pPos[1]; }
+    else { if (mode !== "scroll") st.freeze = null; st.tx = tx; st.ty = ty; }
+
+    // poses you hold: a ring fills, then it happens
+    if (mine) setHold("my:" + mine.id, now, [mine.action, 700, "★ " + mine.name, { url: mine.url, name: "gesture" }]);
+    else if (car.open && g === "Closed_Fist") setHold("Closed_Fist", now, ["carclose", 450, "✊ Close"]);
+    else if (mode === "hold" && still && !(car.open && g !== "Closed_Fist")) setHold(g, now);
+    else setHold(null);
+
+    if (car.open) carouselHand(mode, ax, tapped, pinchStart, now);
+    else if (draw.on) drawHand(mode, pinchStart, pinchEnd, tapped);
+    else {
+      if (tapped) tapAt(tapped);
+      if (pinchEnd && !st.drag && now - st.pStart < 700) tapAt(st.pPos);
+      if (st.pinch) {
+        // pinch and move: grab the page and drag it
+        const mid = [(lm[4][0] + lm[8][0]) / 2, (lm[4][1] + lm[8][1]) / 2];
+        if (!st.drag && Math.hypot(mid[0] - st.pMid[0], mid[1] - st.pMid[1]) > 0.04) { st.drag = true; st.scrollEl = scrollable(st.pPos[0], st.pPos[1]); }
+        if (st.drag) { st.q += -(mid[1] - st.pMid[1]) * innerHeight * 2.4 * (cfg.airScroll || 1); st.pMid = mid; }
+      }
+      if (mode === "scroll") {
+        // open hand or two fingers: move up / down to scroll, swipe sideways for tabs (✋) or back / forward (✌)
+        if (!st.sPrev) { st.sPrev = [ax, ay]; st.sHist = []; st.scrollEl = scrollable(st.freeze[0], st.freeze[1]); }
+        st.sHist.push([ax, ay, now]); while (st.sHist.length > 1 && now - st.sHist[0][2] > 380) st.sHist.shift();
+        const dy = ay - st.sPrev[1]; st.sPrev = [ax, ay];
+        const h0 = st.sHist[0], sx = ax - h0[0], sy = ay - h0[1];
+        if (Math.abs(sx) > 0.17 && Math.abs(sx) > Math.abs(sy) * 2.2 && now > st.swipeCool && st.armed) {
+          st.swipeCool = now + 1000; st.sHist = []; st.q = 0; st.v = 0;
+          act(palm ? (sx > 0 ? "next" : "prev") : sx > 0 ? "forward" : "back");
+        } else if (Math.abs(dy) > 0.0012 && ay < 0.9 && now > st.swipeCool - 600) {
+          const amt = dy * innerHeight * 2.8 * (cfg.airScroll || 1) * scrollDir();
+          st.q += amt; st.v = st.v * 0.6 + amt * 0.4;
+        } else st.v *= 0.7;
+      } else if (st.sPrev) endScroll(true);
     }
-    if (pinchEnd) st.drag = false;
 
-    let x = cx, y = cy, mode = "point";
-    if (st.pinch) {
-      const mid = [(lm[4][0] + lm[8][0]) / 2, (lm[4][1] + lm[8][1]) / 2];
-      if (!st.drag && Math.hypot(mid[0] - st.pMid[0], mid[1] - st.pMid[1]) > 0.035) st.drag = true;
-      if (st.drag) { scrollAt(st.pPos[0], st.pPos[1], -(mid[1] - st.pMid[1]) * innerHeight * 2.4); st.pMid = mid; mode = "drag"; }
-      else { x = st.pPos[0]; y = st.pPos[1]; mode = "pinch"; }
-      setHold(null);
-    } else if (mine) { mode = "hold"; setHold("my:" + mine.id, now, mine); }
-    else if (palm) {
-      mode = "palm";
-      const c = lm[9]; st.palmHist.push([c[0], c[1], now]); while (st.palmHist.length && now - st.palmHist[0][2] > 400) st.palmHist.shift();
-      const prev = st.palmHist[Math.max(0, st.palmHist.length - 2)], vy = c[1] - prev[1], old = st.palmHist[0], dx = c[0] - old[0], dyy = c[1] - old[1];
-      if (Math.abs(dx) > 0.26 && Math.abs(dx) > Math.abs(dyy) * 2.2 && now > st.swipeCool) { st.swipeCool = now + 1100; st.palmHist = []; act(dx > 0 ? "next" : "prev"); setHold(null); }
-      else if (Math.abs(vy) > 0.006) { scrollAt(cx, cy, vy * innerHeight * 3.2 * (cfg.airScroll || 1)); setHold(null); st.holdStill = now; }
-      else if (now - (st.holdStill || 0) > 250) setHold("PalmHold", now);
-    } else if (HOLDS[g]) {
-      mode = "hold";
-      const mv = st.hist.length > 2 ? Math.hypot(cx - st.hist[st.hist.length - 3][0], cy - st.hist[st.hist.length - 3][1]) : 0;
-      if (mv < 40) setHold(g, now); else setHold(null);
-    } else setHold(null);
-
-    ui.g.textContent = st.pinch ? (st.drag ? "🤏 Dragging" : "🤏 Pinch") : mine ? "★ " + mine.name : NAMES[g] || NAMES.None;
+    ui.g.textContent = car.open ? (mode === "scroll" ? "🌀 Spinning" : "☝ Tap a tab · ✊ close") : draw.on ? (st.pinch ? "✏ Drawing" : "✏ Pinch to draw") : st.pinch ? (st.drag ? "🤏 Dragging" : "🤏 Pinch") : mine ? "★ " + mine.name : mode === "scroll" ? (palm ? "✋ Scroll · swipe: tabs" : "✌ Scroll · swipe: back") : mode === "hold" ? NAMES[g] : "☝ Point · tap to click";
     ui.cur.classList.remove("off");
-    ui.cur.classList.toggle("pinch", st.pinch); ui.cur.classList.toggle("palm", mode === "palm"); ui.cur.classList.remove("pen");
-    ui.cur.style.transform = `translate(${x}px, ${y}px)`;
-    lockOn(x, y, mode !== "palm");
+    ui.cur.classList.toggle("pinch", st.pinch); ui.cur.classList.toggle("scroll", mode === "scroll"); ui.cur.classList.toggle("pen", draw.on);
     return true;
   }
-  function lockOn(x, y, allow) {
+
+  // the frame loop: glides the cursor, plays out scrolling, edge-scrolls, spins the carousel, draws ink
+  let raf = 0, lastT = 0;
+  function loop(t) {
+    raf = requestAnimationFrame(loop);
+    if (!ui) return;
+    const dt = Math.min(64, t - (lastT || t)); lastT = t;
+    const live = cfg.air && performance.now() - st.lastHand < 350;
+    if (st.tx !== null && st.px !== null) {
+      const k = 1 - Math.exp(-dt / (st.hot && st.mode === "point" ? 85 : 55));
+      st.px += (st.tx - st.px) * k; st.py += (st.ty - st.py) * k;
+      ui.cur.style.transform = `translate(${st.px.toFixed(1)}px, ${st.py.toFixed(1)}px)`;
+      st.pHist.push([st.px, st.py, t]); if (st.pHist.length > 40) st.pHist.shift();
+    }
+    // queued scrolling, eased
+    if (Math.abs(st.q) >= 0.5) {
+      let s = st.q * (1 - Math.exp(-dt / 75));
+      if (Math.abs(s) < 1) s = Math.sign(st.q) * Math.min(1, Math.abs(st.q));
+      s = Math.round(s); if (s) { scrollNow(st.scrollEl, s); st.q -= s; } else st.q = 0;
+    } else st.q = 0;
+    // point at the top or bottom edge to scroll
+    let edge = 0;
+    if (live && st.mode === "point" && !car.open && !draw.on && st.py !== null) {
+      const z = Math.min(80, innerHeight * 0.09);
+      edge = st.py < z ? -(1 - st.py / z) : st.py > innerHeight - z ? (st.py - (innerHeight - z)) / z : 0;
+    }
+    if (edge) {
+      if (!st.edgeT) { st.edgeT = t; st.edgeEl = scrollable(st.px, clamp(st.py, 100, innerHeight - 100)); }
+      if (t - st.edgeT > 420) scrollNow(st.edgeEl, Math.sign(edge) * Math.max(1, Math.round(Math.abs(edge) ** 1.4 * dt * 1.1 * (cfg.airScroll || 1))));
+    } else st.edgeT = 0;
+    ui.edgeT.style.opacity = edge < 0 ? String(0.25 + Math.abs(edge) * 0.75) : "0"; ui.edgeB.style.opacity = edge > 0 ? String(0.25 + edge * 0.75) : "0";
+    ui.edgeT.classList.toggle("go", edge < 0 && t - st.edgeT > 420); ui.edgeB.classList.toggle("go", edge > 0 && t - st.edgeT > 420);
+    if (car.open) carouselTick(dt, live);
+    if (draw.on && st.pinch && draw.cur && live) addPoint(st.px, st.py);
+    if (live && t - st.lockT > 45) { st.lockT = t; lockOn(st.px, st.py, st.mode === "point" || st.mode === "pinch" || st.mode === "hold"); }
+  }
+
+  // the clickable thing at (x, y), or one just next to it: the cursor doesn't have to be pixel-perfect
+  const NEAR = [[0, -12], [0, 12], [-12, 0], [12, 0], [-10, -10], [10, -10], [-10, 10], [10, 10], [0, -22], [0, 22], [-22, 0], [22, 0]];
+  function target(x, y) {
     const u = under(x, y);
-    ui.root.querySelectorAll(".dock .hot, .dtb .hot").forEach((b) => b.classList.remove("hot"));
-    if (u.mine) { const b = u.mine.closest && u.mine.closest(".dock button, .dtb button"); if (b) b.classList.add("hot"); ui.lock.classList.remove("on"); ui.cur.classList.toggle("hot", !!b); return; }
-    const t = u.el && u.el.closest && u.el.closest(CLICKABLE);
-    ui.cur.classList.toggle("hot", !!t);
-    if (t && allow) { const r = t.getBoundingClientRect(); if (r.width < innerWidth * 0.9 && r.height < innerHeight * 0.6) { Object.assign(ui.lock.style, { transform: `translate(${r.left - 4}px, ${r.top - 4}px)`, width: r.width + 8 + "px", height: r.height + 8 + "px" }); ui.lock.classList.add("on"); return; } }
+    if (u.mine) return { mine: u.mine, x, y };
+    const hit = (el) => (el && el.closest ? el.closest(CLICKABLE) : null);
+    if (hit(u.el)) return { el: u.el, t: hit(u.el), x, y };
+    for (const [dx, dy] of NEAR) {
+      const v = under(x + dx, y + dy), h = !v.mine && hit(v.el);
+      if (h) { const r = h.getBoundingClientRect(); return { el: v.el, t: h, x: clamp(x, r.left + 2, r.right - 2), y: clamp(y, r.top + 2, r.bottom - 2) }; }
+    }
+    return { el: u.el, t: null, x, y };
+  }
+  function lockOn(x, y, allow) {
+    if (x === null) return;
+    const u = target(x, y);
+    ui.root.querySelectorAll(".dock .hot, .dtb .hot, .car .hot, .guide .hot").forEach((b) => b.classList.remove("hot"));
+    if (u.mine) { const b = u.mine.closest && u.mine.closest("button, .card"); if (b) b.classList.add("hot"); ui.lock.classList.remove("on"); st.hot = !!b; ui.cur.classList.toggle("hot", st.hot); return; }
+    st.hot = !!u.t; ui.cur.classList.toggle("hot", st.hot);
+    if (u.t && allow) { const r = u.t.getBoundingClientRect(); if (r.width < innerWidth * 0.9 && r.height < innerHeight * 0.6) { Object.assign(ui.lock.style, { transform: `translate(${r.left - 4}px, ${r.top - 4}px)`, width: r.width + 8 + "px", height: r.height + 8 + "px" }); ui.lock.classList.add("on"); return; } }
     ui.lock.classList.remove("on");
   }
 
   /* ---------- 3D tab carousel ---------- */
-  const car = { open: false, tabs: [], rot: 0, x0: null, rot0: 0, step: 30, R: 400 };
+  const car = { open: false, tabs: [], rot: 0, vel: 0, gx: null, step: 30, R: 400, front: null };
+  const esc = (s) => String(s || "").replace(/[<>&"]/g, "");
+  function renderCards() {
+    // many tabs make a full ring; a few sit on an arc, so they don't stand edge-on
+    const tabs = car.tabs, n = tabs.length; car.full = n >= 9;
+    const step = car.full ? 360 / n : 34, R = car.full ? Math.max(340, 140 / Math.tan(Math.PI / n)) : 560;
+    car.step = step; car.R = R;
+    const fav = (t) => (t.fav ? `<img src="${esc(t.fav)}" alt="">` : "");
+    ui.ring.innerHTML = tabs.map((t, i) => `<div class="card" data-id="${t.id}" data-i="${i}" style="transform: rotateY(${i * step}deg) translateZ(${R}px)"><div class="card__img" style="${t.thumb ? `background-image:url('${t.thumb}')` : ""}">${t.thumb ? "" : fav(t)}</div><div class="card__t">${fav(t)}<span>${esc(t.title)}</span></div><button class="card__x" data-close="${t.id}" title="Close this tab">✕</button></div>`).join("");
+  }
   async function openCarousel() {
     ensure();
     const tabs = await chrome.runtime.sendMessage({ type: "air-tabs" }).catch(() => null);
     if (!tabs || !tabs.length) return flash("No tabs to show");
-    car.tabs = tabs; car.open = true; car.x0 = null;
-    const n = tabs.length, step = 360 / n, R = Math.max(340, 140 / Math.tan(Math.PI / Math.max(n, 3)));
-    car.step = step; car.R = R;
-    const clean = (s) => String(s || "").replace(/[<>&"]/g, "");
-    const fav = (t) => t.fav ? `<img src="${clean(t.fav)}" alt="">` : "";
-    ui.ring.innerHTML = tabs.map((t, i) => `<div class="card" data-id="${t.id}" data-i="${i}" style="transform: rotateY(${i * step}deg) translateZ(${R}px)"><div class="card__img" style="${t.thumb ? `background-image:url('${t.thumb}')` : ""}">${t.thumb ? "" : fav(t)}</div><div class="card__t">${fav(t)}<span>${clean(t.title)}</span></div></div>`).join("");
-    const ai = Math.max(0, tabs.findIndex((t) => t.active));
-    car.rot = -ai * step; spin();
+    if (draw.on) toggleDraw(false);
+    car.tabs = tabs; car.open = true; car.gx = null; car.vel = 0;
+    renderCards();
+    car.rot = -Math.max(0, tabs.findIndex((t) => t.active)) * car.step; spin();
     ui.car.hidden = false;
   }
   function spin() {
     if (!car.tabs.length) return;
+    const n = car.tabs.length;
+    if (!car.full) { const lo = -(n - 1) * car.step; if (car.rot > 0 || car.rot < lo) { car.rot = clamp(car.rot, lo - 8, 8); car.vel *= 0.5; } }
     ui.ring.style.transform = `translateZ(${-car.R}px) rotateY(${car.rot}deg)`;
-    const n = car.tabs.length, i = ((Math.round(-car.rot / car.step) % n) + n) % n;
+    const i = car.full ? ((Math.round(-car.rot / car.step) % n) + n) % n : clamp(Math.round(-car.rot / car.step), 0, n - 1);
     ui.ring.querySelectorAll(".card").forEach((c) => {
       const k = +c.dataset.i, rel = ((k * car.step + car.rot) % 360 + 540) % 360 - 180; // angle from the front
       c.classList.toggle("front", k === i);
       c.style.opacity = String(Math.max(0.12, Math.cos((rel * Math.PI) / 180) * 0.85 + 0.15)); // the back of the ring fades
       c.style.zIndex = String(Math.round(180 - Math.abs(rel)));
+      c.style.pointerEvents = Math.abs(rel) < 70 ? "auto" : "none";
     });
     const t = car.tabs[i]; car.front = t;
     ui.info.querySelector("b").textContent = t.title || t.url;
     ui.info.querySelector("span").textContent = `${i + 1} of ${n} · ${(() => { try { return new URL(t.url).hostname; } catch (e) { return ""; } })()}`;
   }
   function pickTab(id) { closeCarousel(); chrome.runtime.sendMessage({ type: "air-act", act: "goto", id }).catch(() => {}); }
-  function closeCarousel() { car.open = false; if (ui) ui.car.hidden = true; }
-  function carouselHand(lm, g, palm, cx, pinchStart, now) {
-    ui.cur.classList.remove("off"); ui.cur.style.transform = `translate(${cx}px, ${innerHeight * 0.5}px)`; ui.lock.classList.remove("on");
-    ui.g.textContent = "🌀 Spin the tabs";
-    if (g === "Closed_Fist") { closeCarousel(); flash("✊ Closed"); st.fired = "Closed_Fist"; return true; }
-    if (pinchStart && car.front) { flash("🤏 " + (car.front.title || "").slice(0, 40)); pickTab(car.front.id); return true; }
-    const x = lm[9][0];
-    if (car.x0 === null) { car.x0 = x; car.rot0 = car.rot; }
-    const next = car.rot0 - (x - car.x0) * 520;
-    if (Math.abs(next - car.rot) > 0.4) { car.rot = next; car.moved = now; }
-    else if (now - (car.moved || 0) > 350) { const snap = Math.round(car.rot / car.step) * car.step; car.rot += (snap - car.rot) * 0.25; car.rot0 += (snap - car.rot) * 0.25; } // settle on the nearest tab
+  function closeTabInCarousel(id) {
+    const i = car.tabs.findIndex((t) => t.id === id); if (i < 0) return;
+    const front = car.front && car.front.id;
+    chrome.runtime.sendMessage({ type: "air-act", act: "closetab", id }).catch(() => {});
+    car.tabs.splice(i, 1); flash("✕ Tab closed");
+    if (!car.tabs.length) return closeCarousel();
+    renderCards();
+    const fi = Math.max(0, car.tabs.findIndex((t) => t.id === front));
+    car.rot = -(front === id ? Math.min(i, car.tabs.length - 1) : fi) * car.step; spin();
+  }
+  function closeCarousel() { car.open = false; car.gx = null; if (ui) ui.car.hidden = true; }
+  function carouselHand(mode, ax, tapped, pinchStart, now) {
+    if (mode === "scroll") { // grab the ring and turn it
+      if (car.gx === null) car.gx = ax;
+      const dx = ax - car.gx; car.gx = ax;
+      const dr = dx * 460; car.rot += dr; car.vel = car.vel * 0.5 + dr * 0.5; car.moved = now;
+    } else car.gx = null;
+    if (tapped) tapAt(tapped);
+    if (pinchStart) tapAt([st.px, st.py]);
+  }
+  function carouselTick(dt, live) {
+    if (car.gx === null) {
+      if (Math.abs(car.vel) > 0.08) { car.rot += car.vel * (dt / 33); car.vel *= Math.pow(0.88, dt / 16); }
+      else { car.vel = 0; const snap = Math.round(car.rot / car.step) * car.step; car.rot += (snap - car.rot) * (1 - Math.exp(-dt / 110)); }
+    }
+    // hover the ◀ ▶ buttons to keep turning
+    if (live && st.px !== null) { const u = under(st.px, st.py), b = u.mine && u.mine.closest && u.mine.closest("[data-car=l], [data-car=r]"); if (b) { car.rot += (b.dataset.car === "l" ? 1 : -1) * dt * 0.09; car.vel = 0; } }
     spin();
-    return true;
   }
 
   /* ---------- air drawing ---------- */
@@ -387,13 +613,19 @@
     c.addEventListener("pointerup", () => { m = null; endStroke(); });
   }
   function startStroke(x, y) { draw.cur = { c: draw.color, pts: [[x + scrollX, y + scrollY]] }; draw.strokes.push(draw.cur); renderInk(); }
-  function addPoint(x, y) { if (!draw.cur) return; const p = draw.cur.pts, l = p[p.length - 1], nx = x + scrollX, ny = y + scrollY; if (Math.hypot(nx - l[0], ny - l[1]) > 1.5) { p.push([nx, ny]); renderInk(); } }
+  function addPoint(x, y) { if (!draw.cur) return; const p = draw.cur.pts, l = p[p.length - 1], nx = x + scrollX, ny = y + scrollY; if (Math.hypot(nx - l[0], ny - l[1]) > 2) { p.push([nx, ny]); renderInk(); } }
   function endStroke() { if (draw.cur && draw.cur.pts.length < 2) draw.strokes.pop(); draw.cur = null; renderInk(); }
   function renderInk() {
     if (!ui) return; const x = ui.ink.getContext("2d"); x.clearRect(0, 0, innerWidth, innerHeight);
     if (!draw.on) return;
     for (const s of draw.strokes) {
-      const path = () => { x.beginPath(); s.pts.forEach(([px, py], i) => { const a = px - scrollX, b = py - scrollY; i ? x.lineTo(a, b) : x.moveTo(a, b); }); };
+      // a smooth curve through the midpoints, so lines look hand-drawn, not jagged
+      const path = () => {
+        const P = s.pts.map(([px, py]) => [px - scrollX, py - scrollY]);
+        x.beginPath(); x.moveTo(P[0][0], P[0][1]);
+        for (let i = 1; i < P.length - 1; i++) x.quadraticCurveTo(P[i][0], P[i][1], (P[i][0] + P[i + 1][0]) / 2, (P[i][1] + P[i + 1][1]) / 2);
+        if (P.length > 1) x.lineTo(P[P.length - 1][0], P[P.length - 1][1]);
+      };
       x.lineCap = x.lineJoin = "round";
       x.strokeStyle = s.c; x.lineWidth = 9; x.shadowColor = s.c; x.shadowBlur = 22; x.globalAlpha = 0.65; path(); x.stroke();
       x.shadowBlur = 0; x.globalAlpha = 1; x.strokeStyle = "#fff"; x.lineWidth = 2.6; path(); x.stroke();
@@ -421,16 +653,15 @@
       hide.forEach((e, i) => (e.style.visibility = was[i])); flash("💾 Saved to Downloads/DevTab");
     }
   }
-  function drawHand(cx, cy, pinchStart, pinchEnd, now) {
-    ui.cur.classList.remove("off"); ui.cur.classList.add("pen"); ui.cur.style.transform = `translate(${cx}px, ${cy}px)`; ui.lock.classList.remove("on");
+  function drawHand(mode, pinchStart, pinchEnd, tapped) {
     if (pinchStart) {
-      const u = under(cx, cy);
-      if (u.mine && u.mine.closest && u.mine.closest(".dtb button")) { st.toolbarPress = u.mine.closest(".dtb button"); return true; }
-      startStroke(cx, cy); ui.g.textContent = "✏ Drawing";
-    } else if (st.pinch && draw.cur) addPoint(cx, cy);
-    if (pinchEnd) { if (st.toolbarPress) { drawButton(st.toolbarPress); st.toolbarPress = null; } else endStroke(); ui.g.textContent = "✏ Pinch to draw"; }
-    lockOn(cx, cy, false);
-    return true;
+      const u = under(st.px, st.py);
+      if (u.mine && u.mine.closest && u.mine.closest(".dtb button, .dock button")) { st.toolbarPress = u.mine.closest(".dtb button, .dock button"); return; }
+      startStroke(st.px, st.py);
+    }
+    if (pinchEnd) { if (st.toolbarPress) { st.toolbarPress.click(); st.toolbarPress = null; } else endStroke(); }
+    // a tap only works on DevTab's own buttons here, so drawing never clicks the page by accident
+    if (tapped) { const u = under(tapped[0], tapped[1]); if (u.mine) click(tapped[0], tapped[1]); }
   }
 
   /* ---------- hands-free: face control ---------- */
@@ -506,13 +737,14 @@
   });
   document.addEventListener("keydown", (e) => {
     if (!ui) return;
-    if (e.key === "Escape" && car.open) { closeCarousel(); e.stopPropagation(); }
+    if (e.key === "Escape" && ui.guide && !ui.guide.hidden) { showGuide(false); e.stopPropagation(); }
+    else if (e.key === "Escape" && car.open) { closeCarousel(); e.stopPropagation(); }
     else if (e.key === "Escape" && draw.on) { toggleDraw(false); e.stopPropagation(); }
     else if (car.open && (e.key === "ArrowLeft" || e.key === "ArrowRight")) { car.rot += (e.key === "ArrowLeft" ? 1 : -1) * car.step; spin(); e.preventDefault(); }
     else if (car.open && e.key === "Enter" && car.front) { pickTab(car.front.id); e.preventDefault(); }
   }, true);
   // a page shown again (back/forward cache, or switching to this tab) waits for a fresh pose
-  const rearm = () => { st.armed = false; st.fired = null; st.shownAt = performance.now(); st.pinch = false; st.drag = false; if (ui) chrome.runtime.sendMessage({ type: "cam-state?" }).then(guard).catch(() => {}); };
+  const rearm = () => { st.armed = false; st.fired = null; st.shownAt = performance.now(); st.pinch = false; st.drag = false; st.tap = null; st.q = 0; endScroll(false); if (ui) chrome.runtime.sendMessage({ type: "cam-state?" }).then(guard).catch(() => {}); };
   addEventListener("pageshow", rearm);
   document.addEventListener("visibilitychange", () => { if (document.visibilityState === "visible") rearm(); });
   setInterval(() => { if (ui && performance.now() - st.lastHand > 1500 && !car.open) { ui.cur.classList.add("off"); ui.lock.classList.remove("on"); } }, 500);

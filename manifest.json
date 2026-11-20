@@ -2,7 +2,7 @@
   "manifest_version": 3,
   "name": "DevTab: Developer & Hacker New Tab",
   "short_name": "DevTab",
-  "version": "4.0.0",
+  "version": "4.1.0",
   "description": "A developer & hacker new tab: live weather sky, GitHub city, particle clock, focus mode, ambient sounds, workspaces, a tab pet, page tools and reminders that ring.",
   "chrome_url_overrides": {
     "newtab": "newtab.html"

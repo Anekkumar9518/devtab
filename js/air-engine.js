@@ -56,7 +56,8 @@ export async function start(cfg) {
     stream = await navigator.mediaDevices.getUserMedia({ video: { width: { ideal: 640 }, height: { ideal: 480 }, frameRate: { ideal: 30 }, facingMode: "user" }, audio: false });
   } catch (e) { running = false; send({ status: "error", error: String((e && e.name) || e) }); return; }
   send({ status: "on" });
-  reader = new MediaStreamTrackProcessor({ track: stream.getVideoTracks()[0] }).readable.getReader();
+  // keep at most one waiting frame, so a slow moment never builds up lag
+  reader = new MediaStreamTrackProcessor({ track: stream.getVideoTracks()[0], maxBufferSize: 1 }).readable.getReader();
   let n = 0;
   while (running) {
     let res;

@@ -8,10 +8,10 @@ const $ = (s, el = document) => el.querySelector(s);
 const GKEY = "devtab:gestures";
 const ICON = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M18 11V6a2 2 0 0 0-4 0v5M14 10V4a2 2 0 0 0-4 0v6M10 10.5V6a2 2 0 0 0-4 0v8"/><path d="M18 8a2 2 0 1 1 4 0v6a8 8 0 0 1-8 8h-2c-2.8 0-4.5-.9-6-2.4l-3.6-3.6a2 2 0 0 1 2.8-2.8L7 15"/></svg>';
 const GESTURES = [
-  ["☝️", "Point", "Move the cursor"], ["🤏", "Pinch", "Click · twice to double-click"], ["🤏↕", "Pinch + move", "Drag the page"],
-  ["✋↕", "Palm up / down", "Scroll"], ["✋↔", "Palm swipe", "Next / previous tab"], ["✋", "Palm, hold still", "All tabs in a 3D ring"],
-  ["👍", "Thumbs up, hold", "Play / pause the video"], ["✌️", "Victory, hold", "Go back"], ["✊", "Fist, hold", "Minimize the window"],
-  ["🤟", "Love sign, hold", "Air drawing"], ["👎", "Thumbs down, hold", "Reload"], ["⭐", "Your own", "Teach poses below"],
+  ["☝️", "Point", "Move your whole hand to move the cursor"], ["👆", "Tap", "Flick your finger down: click · twice: double-click"], ["🤏", "Pinch", "Also clicks · pinch + move drags the page"],
+  ["✋↕", "Open hand up / down", "Scroll the page"], ["✌️↕", "Two fingers up / down", "Scroll, like a trackpad"], ["☝️⇵", "Point at the top / bottom edge", "Keeps scrolling"],
+  ["✋↔", "Open hand swipe", "Next / previous tab"], ["✌️↔", "Two-finger swipe", "Back / forward"], ["✊", "Fist, hold", "All tabs in 3D: open, close, new tab"],
+  ["👍", "Thumbs up, hold", "Play / pause the video"], ["🤟", "Love sign, hold", "Air drawing"], ["👎", "Thumbs down, hold", "Reload"],
 ];
 const FACE = [["😉", "Wink", "Click where you're looking"], ["🤨", "Raise eyebrows", "Scroll down"], ["😮", "Open mouth", "Scroll up"], ["🙆", "Tilt your head", "Next / previous tab"], ["😁", "Big smile", "Play / pause the video"]];
 export const ACTIONS = [
@@ -40,7 +40,7 @@ async function render(el) {
         <div class="air__live"><canvas width="560" height="420" data-cv></canvas><span class="air__st" data-st>${cam ? "Starting camera…" : "Camera off"}</span></div>
         <div class="air__copy">
           <h3>${fx.air ? "Hand control is on" : "Control the web with your hands"}</h3>
-          <p>Point to move a cursor, pinch to click, swipe between tabs, hold your palm still for all tabs in 3D, 🤟 to draw in the air. It all runs on this computer; the camera image never leaves it.</p>
+          <p>Point to move a smooth cursor, tap your finger to click, move an open hand to scroll, swipe between tabs, hold a fist for all tabs in 3D, 🤟 to draw in the air. It all runs on this computer; the camera image never leaves it.</p>
           ${ext ? `<button type="button" class="btn air__go" data-toggle>${fx.air ? "⏻ Turn hand control off" : "✋ Turn on hand control"}</button>` : `<p class="note">Air control needs the installed extension.</p>`}
           <p class="note" data-why></p>
         </div>
@@ -70,7 +70,9 @@ async function render(el) {
         <label class="row">Face cursor speed <input type="range" min="0.6" max="1.8" step="0.1" value="${fx.faceSpeed || 1}" data-k="faceSpeed"></label>
         <label class="row">Scroll speed <input type="range" min="0.5" max="2" step="0.1" value="${fx.airScroll || 1}" data-k="airScroll"></label>
         <label class="row">How strict your own gestures are <input type="range" min="0.14" max="0.34" step="0.02" value="${fx.gestureTol || 0.24}" data-k="gestureTol"></label>
+        <label class="row">Reverse hand scrolling (grab the page) <input type="checkbox" data-c="airScrollFlip" ${fx.airScrollFlip ? "checked" : ""}></label>
         <label class="row">Show the hand panel on pages <input type="checkbox" data-c="airPanel" ${fx.airPanel !== false ? "checked" : ""}></label>
+        <label class="row">Show the gesture guide again on the next page <input type="checkbox" data-guide ${fx.airGuided ? "" : "checked"}></label>
         <p class="note">Sit about an arm's length from the camera in good light. Set a keyboard shortcut for hand control at chrome://extensions/shortcuts.</p>
       </div>
     </div>`;
@@ -153,6 +155,7 @@ async function render(el) {
     }
     if (t.matches("[data-away]")) { S.fx.awaySecs = +t.value; await C.persist(); }
     if (t.dataset.c) { S.fx[t.dataset.c] = t.checked; await C.persist(); }
+    if (t.matches("[data-guide]")) { S.fx.airGuided = !t.checked; await C.persist(); }
   });
   el.addEventListener("input", (e) => { const k = e.target.dataset.k; if (k) { C.S().fx[k] = +e.target.value; C.persist(); } });
   // website access (asked straight from the click) and the camera
