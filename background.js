@@ -2,6 +2,10 @@
 // one is due, rings, opens an alert window on top of everything and shows a
 // notification. It runs whether or not a DevTab tab is open.
 import { getTasks, setTasks, act, TASKS } from "./js/tasks.js";
+import { setRinging } from "./js/bg/audio.js";
+import "./js/bg/focus.js";
+import "./js/bg/track.js";
+import "./js/bg/tools.js";
 
 const PREFIX = "task:";
 const W = 440, H = 600;
@@ -21,15 +25,8 @@ async function syncAlarms() {
   for (const [name, at] of want) chrome.alarms.create(name, { when: Math.max(at, Date.now() + 1000) });
 }
 
-/* ---------- ringtone (an offscreen document can play audio for a worker) ---------- */
-async function ring(on) {
-  const has = chrome.offscreen.hasDocument ? await chrome.offscreen.hasDocument() : false;
-  if (on && !has) {
-    await chrome.offscreen.createDocument({ url: "offscreen.html", reasons: ["AUDIO_PLAYBACK"], justification: "Plays the reminder ringtone until the task is started, completed or snoozed." }).catch(() => {});
-  } else if (!on && has) {
-    await chrome.offscreen.closeDocument().catch(() => {});
-  }
-}
+/* ---------- ringtone: played by the shared audio page (js/bg/audio.js) ---------- */
+const ring = (on) => setRinging(on);
 
 /* ---------- which alert window belongs to which task ---------- */
 const getWins = async () => (await chrome.storage.session.get("wins")).wins || {};

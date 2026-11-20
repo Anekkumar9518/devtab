@@ -2,6 +2,9 @@
 // so they stay sharp on 4K monitors without shipping a heavy video.
 // Each one takes (ctx, w, h, t, state, accent) per frame; the runner handles
 // sizing, device pixel ratio, pausing on hidden tabs and reduced motion.
+import { par } from "./parallax.js";
+import { sky } from "./scenes/sky.js";
+import { city } from "./scenes/city.js";
 
 const rgb = (hex) => {
   const n = parseInt(hex.replace("#", ""), 16);
@@ -22,8 +25,9 @@ const SCENES = {
       ctx.fillStyle = "#06070d"; ctx.fillRect(0, 0, w, h);
       ctx.globalCompositeOperation = "lighter";
       st.seeds.forEach((s, i) => {
-        const x = w * (0.5 + 0.38 * Math.sin(t * s.s + s.p + i));
-        const y = h * (0.5 + 0.32 * Math.cos(t * s.s * 0.8 + s.p * 1.7));
+        const d = 0.4 + i * 0.25; // each glow sits at its own depth
+        const x = w * (0.5 + 0.38 * Math.sin(t * s.s + s.p + i) - par.x * 0.03 * d);
+        const y = h * (0.5 + 0.32 * Math.cos(t * s.s * 0.8 + s.p * 1.7) - par.y * 0.03 * d);
         const r = Math.max(w, h) * s.r;
         const g = ctx.createRadialGradient(x, y, 0, x, y, r);
         const c = pal[i % pal.length];
@@ -46,6 +50,7 @@ const SCENES = {
       bgG.addColorStop(0, rgba(mix(a, [5, 6, 10], 0.82), 1)); bgG.addColorStop(1, "#05060a");
       ctx.fillStyle = bgG; ctx.fillRect(0, 0, w, h);
       const R = 140 * dpr, pts = st.pts;
+      ctx.save(); ctx.translate(-par.x * 26 * dpr, -par.y * 16 * dpr);
       for (const p of pts) {
         p.x += p.vx * dpr; p.y += p.vy * dpr;
         if (p.x < 0 || p.x > w) p.vx *= -1;
@@ -65,6 +70,7 @@ const SCENES = {
         ctx.fillStyle = rgba(mix(a, [255, 255, 255], 0.5), 0.8);
         ctx.beginPath(); ctx.arc(p.x, p.y, 2.1 * dpr, 0, 6.283); ctx.fill();
       }
+      ctx.restore();
     },
   },
 
@@ -97,7 +103,7 @@ const SCENES = {
     draw(ctx, w, h, t, st, accent) {
       const a = rgb(accent);
       ctx.fillStyle = "rgba(3,4,10,0.55)"; ctx.fillRect(0, 0, w, h);
-      const cx = w / 2, cy = h / 2, f = Math.max(w, h) * 0.5;
+      const cx = w / 2 - par.x * w * 0.08, cy = h / 2 - par.y * h * 0.08, f = Math.max(w, h) * 0.5;
       for (const s of st.stars) {
         const pz = s.z; s.z -= 0.0035;
         if (s.z <= 0.01) { s.x = (Math.random() - 0.5) * 2; s.y = (Math.random() - 0.5) * 2; s.z = 1; continue; }
@@ -120,7 +126,7 @@ const SCENES = {
       const sky = ctx.createLinearGradient(0, 0, 0, hz);
       sky.addColorStop(0, "#090014"); sky.addColorStop(1, "#2a0838");
       ctx.fillStyle = sky; ctx.fillRect(0, 0, w, hz);
-      const sr = Math.min(w, h) * 0.2, sx = w / 2, sy = hz - sr * 0.35;
+      const sr = Math.min(w, h) * 0.2, sx = w / 2 - par.x * w * 0.025, sy = hz - sr * 0.35 - par.y * h * 0.01;
       const sun = ctx.createLinearGradient(0, sy - sr, 0, sy + sr);
       sun.addColorStop(0, "#ffd36b"); sun.addColorStop(0.55, "#ff4d8d"); sun.addColorStop(1, "#7a1fd6");
       ctx.save(); ctx.beginPath(); ctx.arc(sx, sy, sr, 0, 6.283); ctx.clip();
@@ -135,22 +141,28 @@ const SCENES = {
       ctx.shadowColor = rgba(a, 0.9); ctx.shadowBlur = 12;
       const off = (t * 0.6) % 1;
       for (let i = 0; i < 18; i++) { const z = (i + off) / 18, y = hz + (h - hz) * z * z; ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(w, y); ctx.stroke(); }
-      for (let i = -16; i <= 16; i++) { ctx.beginPath(); ctx.moveTo(w / 2 + i * w * 0.02, hz); ctx.lineTo(w / 2 + i * w * 0.18, h); ctx.stroke(); }
+      const vx = w / 2 + par.x * w * 0.05;
+      for (let i = -16; i <= 16; i++) { ctx.beginPath(); ctx.moveTo(vx + i * w * 0.02, hz); ctx.lineTo(w / 2 + i * w * 0.18, h); ctx.stroke(); }
       ctx.shadowBlur = 0;
     },
   },
+
+  sky,
+  city,
 };
 
 export const SCENE_LIST = [
-  ["aurora", "Aurora"], ["constellation", "Constellation"], ["matrix", "Matrix rain"], ["starfield", "Starfield"], ["synthwave", "Synthwave"],
+  ["aurora", "Aurora"], ["constellation", "Constellation"], ["matrix", "Matrix rain"], ["starfield", "Starfield"], ["synthwave", "Synthwave"], ["sky", "Live sky"], ["city", "GitHub city"],
 ];
 
 // Runs one scene on a canvas until stop() is called.
-export function runScene(canvas, name, accent) {
+// `data` is shared with the page (weather, time travel, GitHub data) and read every frame.
+export function runScene(canvas, name, accent, data = {}) {
   const scene = SCENES[name] || SCENES.aurora;
   const ctx = canvas.getContext("2d");
   const reduce = matchMedia("(prefers-reduced-motion: reduce)").matches;
   const mouse = { x: null, y: null };
+  const env = { data };
   let st, raf = 0, last = 0, dpr = 1, w = 0, h = 0, alive = true;
   const size = () => {
     dpr = Math.min(2, window.devicePixelRatio || 1) * (scene.scale || 1);
@@ -164,15 +176,15 @@ export function runScene(canvas, name, accent) {
     if (document.hidden) return;
     if (scene.fps && now - last < 1000 / scene.fps) return;
     last = now;
-    scene.draw(ctx, w, h, now / 1000, st, accent, mouse, dpr);
+    scene.draw(ctx, w, h, now / 1000, st, accent, mouse, dpr, env);
   };
-  const onMove = (e) => { mouse.x = e.clientX; mouse.y = e.clientY; };
+  const onMove = (e) => { mouse.x = e.clientX; mouse.y = e.clientY; mouse.free = !(e.target.closest && e.target.closest("a, button, input, form, .panel, .dock, .bar, .hints, .tt, dialog, .drawer")); };
   const onLeave = () => { mouse.x = mouse.y = null; };
   size();
   addEventListener("resize", size);
   addEventListener("pointermove", onMove);
   document.addEventListener("pointerleave", onLeave);
-  if (reduce) { for (let i = 0; i < 40; i++) scene.draw(ctx, w, h, i / 10, st, accent, mouse, dpr); }
+  if (reduce) { for (let i = 0; i < 40; i++) scene.draw(ctx, w, h, i / 10, st, accent, mouse, dpr, env); }
   else raf = requestAnimationFrame(frame);
   return {
     stop() { alive = false; cancelAnimationFrame(raf); removeEventListener("resize", size); removeEventListener("pointermove", onMove); document.removeEventListener("pointerleave", onLeave); },

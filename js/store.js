@@ -31,6 +31,12 @@ export const DEFAULTS = {
   dev: { bg: "aurora", accent: "#7c9cff", dim: 25, blur: 0 },
   hacker: { bg: "matrix", accent: "#00ff66", dim: 20, blur: 0 },
   photo: null,                       // { id, author, url } for the 4K photo background
+  github: "",                        // username for the GitHub city background
+  fx: {
+    parallax: true, timeTravel: true, particleClock: true, gravity: true, launch: true,
+    pet: true, petKind: "robot", petName: "Bit", recall: true, wrapped: false,
+  },
+  focus: { minutes: 25, sites: ["youtube.com", "instagram.com", "facebook.com", "x.com", "twitter.com", "reddit.com", "netflix.com"] },
 };
 
 export async function load() {
@@ -44,6 +50,8 @@ export async function load() {
     Object.assign(out, s);
     out.dev = { ...DEFAULTS.dev, ...(s.dev || {}) };
     out.hacker = { ...DEFAULTS.hacker, ...(s.hacker || {}) };
+    out.fx = { ...DEFAULTS.fx, ...(s.fx || {}) };
+    out.focus = { ...DEFAULTS.focus, ...(s.focus || {}) };
   }
   return out;
 }

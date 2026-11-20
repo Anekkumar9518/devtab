@@ -9,6 +9,8 @@
   <link rel="icon" href="icons/icon48.png">
   <link rel="stylesheet" href="css/style.css">
   <link rel="stylesheet" href="css/alert.css">
+  <link rel="stylesheet" href="css/hub.css">
+  <link rel="stylesheet" href="css/fx.css">
 </head>
 <body data-mode="dev">
   <div class="bg" aria-hidden="true">
@@ -35,6 +37,9 @@
         <button type="button" class="gbar__apps" id="appsBtn" aria-label="Google apps" aria-expanded="false" title="Google apps"></button>
         <a href="https://myaccount.google.com/" class="gbar__me" id="avatar" title="Google account" aria-label="Google account"></a>
       </nav>
+      <button type="button" class="chip chip--focus" id="focusChip" title="Focus session" hidden></button>
+      <button type="button" class="chip" id="soundChip" title="Ambient sounds" hidden></button>
+      <button type="button" class="icon-btn" id="hubBtn" aria-label="Open DevTab Hub" title="DevTab Hub (H or Ctrl+K)"></button>
       <button type="button" class="icon-btn" id="openSettings" aria-label="Settings" title="Settings"></button>
     </div>
   </header>
@@ -95,7 +100,25 @@
     </form>
   </dialog>
 
+  <div class="tt" id="tt" hidden>
+    <span class="tt__ic" id="ttIc"></span>
+    <div class="tt__body">
+      <span class="tt__lbl" id="ttLbl"></span>
+      <span class="tt__track" id="ttTrack"><input type="range" id="ttRange" min="0" max="1439" step="1" aria-label="Time travel through the day"></span>
+    </div>
+  </div>
+
   <p class="credit" id="credit"></p>
+
+  <dialog class="hub" id="hub" aria-labelledby="hubTitle">
+    <div class="hub__in">
+      <nav class="hub__nav" id="hubNav" aria-label="Hub sections"></nav>
+      <section class="hub__main">
+        <header class="hub__head"><div><h2 id="hubTitle"></h2><p id="hubSub"></p></div><button type="button" class="icon-btn" id="hubClose" aria-label="Close the hub"></button></header>
+        <div class="hub__pane" id="hubPane"></div>
+      </section>
+    </div>
+  </dialog>
 
   <div class="scrim" id="scrim" hidden></div>
   <aside class="drawer" id="settings" hidden aria-label="Settings"></aside>

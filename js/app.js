@@ -2,7 +2,22 @@ import { load, save, onChange, putMedia, getMedia, delMedia, DEFAULTS } from "./
 import { runScene, SCENE_LIST } from "./backgrounds.js";
 import { getTasks, setTasks, getHistory, addHistory, clearHistory, newTask, act, when, TASKS, HISTORY } from "./tasks.js";
 import { renderAlert } from "./alertui.js";
-import { initLinks, drawLinks, drawDock, drawGoogle, bookmarkFolders } from "./links.js";
+import { initLinks, drawLinks, drawDock, drawGoogle, bookmarkFolders, favicon, host } from "./links.js";
+import { initHub, openHub } from "./hub.js";
+import { initFocus } from "./panes/focus.js";
+import { initSounds } from "./panes/sounds.js";
+import { initWorkspaces } from "./panes/workspaces.js";
+import { initWrapped } from "./panes/wrapped.js";
+import { initTools } from "./panes/tools.js";
+import { initRecall } from "./fx/recall.js";
+import { initPet, drawPet } from "./fx/pet.js";
+import { launch, SITES } from "./fx/launch.js";
+import { gravityActive } from "./fx/gravity.js";
+import { par } from "./parallax.js";
+import { initTimeTravel, drawTimeTravel } from "./timetravel.js";
+import { initParticleClock, setParticleClock, refresh as refreshParticles } from "./fx/pclock.js";
+import { initGravity, startGravity } from "./fx/gravity.js";
+import { getContributions, GH_ORIGIN } from "./github.js";
 
 const $ = (s, el = document) => el.querySelector(s);
 const esc = (s) => String(s).replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
@@ -48,6 +63,10 @@ const looksLikeUrl = (q) => /^(https?:\/\/)?(localhost(:\d+)?|([\w-]+\.)+[a-z]{2
 function resolve(q) {
   q = q.trim(); if (!q) return null;
   if (looksLikeUrl(q)) return { url: /^https?:\/\//i.test(q) ? q : (q.startsWith("localhost") ? "http://" : "https://") + q, label: "Open " + q };
+  const word = q.toLowerCase().replace(/\s+/g, "");
+  const mine = (S.custom || []).find((l) => (l.t || "").toLowerCase().replace(/\s+/g, "") === word);
+  if (mine) return { url: mine.u, label: "Open " + mine.t, site: true };
+  if (SITES[word]) return { url: SITES[word][1], label: "Open " + SITES[word][0], site: true };
   const m = q.match(/^(\S+)\s+(.+)$/);
   if (m && BANGS[m[1].toLowerCase()]) { const [name, base] = BANGS[m[1].toLowerCase()]; return { url: base + encodeURIComponent(m[2]), label: `Search ${name} for “${m[2]}”` }; }
   const [name, base] = ENGINES[S.engine] || ENGINES.google;
@@ -57,6 +76,8 @@ function resolve(q) {
 /* ---------- state ---------- */
 let S = await load();
 let scene = null, mediaUrl = null;
+// shared with the running background scene, read every frame
+const sceneData = { wx: null, override: null, preview: "live", gh: null };
 const M = () => S[S.mode];
 const persist = () => save(S);
 
@@ -68,6 +89,8 @@ async function paintBackground() {
   canvas.hidden = img.hidden = vid.hidden = true; vid.pause(); vid.removeAttribute("src"); credit.innerHTML = "";
   document.body.style.removeProperty("--solid");
   const bg = M().bg;
+  sceneData.preview = M().skyWx || "live";
+  drawTimeTravel();
   if (bg === "custom") {
     const blob = await getMedia("custom-" + S.mode);
     if (blob) {
@@ -88,7 +111,22 @@ async function paintBackground() {
     return;
   }
   canvas.hidden = false;
-  scene = runScene(canvas, SCENE_LIST.some(([k]) => k === bg) ? bg : DEFAULTS[S.mode].bg, M().accent);
+  if (bg === "city") loadCity();
+  scene = runScene(canvas, SCENE_LIST.some(([k]) => k === bg) ? bg : DEFAULTS[S.mode].bg, M().accent, sceneData);
+}
+
+// GitHub city: fetch the calendar, then the scene builds itself from sceneData.gh.
+async function loadCity(force) {
+  const credit = $("#credit");
+  if (!S.github) { sceneData.gh = null; credit.innerHTML = ""; return; }
+  if (!force && sceneData.gh && sceneData.gh.user === S.github && sceneData.gh.days) { cityCredit(); return; }
+  sceneData.gh = { user: S.github, loading: true };
+  try { sceneData.gh = await getContributions(S.github, force); cityCredit(); }
+  catch (e) { sceneData.gh = { user: S.github, error: e.message === "notfound" ? `No GitHub user called @${S.github}. Check the username in Settings.` : "Couldn't reach GitHub. Check your connection." }; }
+}
+function cityCredit() {
+  const g = sceneData.gh; if (!g || !g.days || M().bg !== "city") return;
+  $("#credit").innerHTML = `<a href="https://github.com/${esc(g.user)}" target="_blank" rel="noopener">@${esc(g.user)}</a> · ${g.total.toLocaleString()} contributions in the last year`;
 }
 
 // A random 4K landscape from Picsum (Unsplash photos, free to use).
@@ -115,7 +153,9 @@ function applyLook() {
   $(".brand__txt").textContent = S.mode === "hacker" ? "devtab://root" : "devtab";
   $("#todoTitle").textContent = S.mode === "hacker" ? "./tasks" : "Tasks";
   $("#todo").hidden = !S.showTodo;
-  tick(true); drawGreeting(); drawGoogle();
+  par.on = S.fx.parallax;
+  tick(true);
+  setParticleClock(S.fx.particleClock, S.mode, m.accent); drawGreeting(); drawGoogle();
 }
 
 /* ---------- clock + greeting ---------- */
@@ -131,6 +171,7 @@ function tick(force) {
   const c = $("#clock");
   c.dataset.text = txt;
   c.innerHTML = `<span>${txt}</span>${S.clock24 ? "" : `<small>${ap}</small>`}`;
+  refreshParticles();
   if (d.getHours() === 0 && d.getMinutes() === 0) drawGreeting();
 }
 setInterval(tick, 1000);
@@ -161,7 +202,24 @@ q.addEventListener("input", drawHints);
 q.addEventListener("keydown", (e) => {
   if (e.key === "Enter" && (e.ctrlKey || e.metaKey)) { e.preventDefault(); const r = resolve(q.value); if (r) window.open(r.url, "_blank", "noopener"); }
 });
-$("#search").addEventListener("submit", (e) => { e.preventDefault(); const r = resolve(q.value); if (r) location.href = r.url; });
+$("#search").addEventListener("submit", (e) => {
+  e.preventDefault();
+  if (q.value.trim().toLowerCase() === "gravity") { q.value = ""; drawHints(); q.blur(); return startGravity(); }
+  const r = resolve(q.value); if (!r) return;
+  go(r.url, { name: r.label.replace(/^Open /, "") });
+});
+// open a URL, with its launch scene first when that's switched on
+async function go(url, opts = {}) {
+  if (S.fx.launch && (opts.force || /^https?:/.test(url))) await launch(url, { hacker: S.mode === "hacker", accent: M().accent, icon: favicon(url, 64), name: opts.name });
+  location.href = url;
+}
+// shortcuts and the dock play a launch scene too (Ctrl/middle-click still opens a new tab straight away)
+document.addEventListener("click", (e) => {
+  if (!S.fx.launch || e.defaultPrevented || e.button !== 0 || e.ctrlKey || e.metaKey || e.shiftKey || e.altKey) return;
+  const a = e.target.closest("#links .link__a[data-url], #dock a.dk[href], #dockPop a.dpi[href]");
+  if (!a || e.target.closest("[data-edit], [data-rm]")) return;
+  e.preventDefault(); go(a.dataset.url || a.href, { name: a.dataset.title || a.dataset.label });
+});
 hints.addEventListener("click", (e) => { const b = e.target.closest("[data-bang]"); if (b) { q.value = b.dataset.bang + " "; q.focus(); drawHints(); } });
 
 /* ---------- tasks, reminders and history ---------- */
@@ -307,22 +365,29 @@ if (!ext) {
 
 /* ---------- weather (Open-Meteo, no key) ---------- */
 const WMO = { 0: "Clear", 1: "Mostly clear", 2: "Partly cloudy", 3: "Cloudy", 45: "Fog", 48: "Fog", 51: "Drizzle", 53: "Drizzle", 55: "Drizzle", 61: "Rain", 63: "Rain", 65: "Heavy rain", 71: "Snow", 73: "Snow", 75: "Snow", 80: "Showers", 81: "Showers", 82: "Showers", 95: "Thunderstorm", 96: "Thunderstorm", 99: "Thunderstorm" };
+const hm = (iso) => { const m = /T(\d\d):(\d\d)/.exec(iso || ""); return m ? +m[1] * 60 + +m[2] : null; };
+async function getWx() {
+  if (!S.city) return null;
+  const key = "devtab:wx2:" + S.city.lat + "," + S.city.lon;
+  try { const c = JSON.parse(sessionStorage.getItem(key) || "null"); if (c && Date.now() - c.at < 20 * 60 * 1000) return c; } catch (e) {}
+  const r = await fetch(`https://api.open-meteo.com/v1/forecast?latitude=${S.city.lat}&longitude=${S.city.lon}&current=temperature_2m,weather_code,cloud_cover,wind_speed_10m&daily=sunrise,sunset&timezone=auto&forecast_days=1`);
+  const j = await r.json();
+  const wx = { t: Math.round(j.current.temperature_2m), c: j.current.weather_code, cloud: j.current.cloud_cover, wind: j.current.wind_speed_10m,
+    rise: hm(j.daily.sunrise[0]) ?? 375, set: hm(j.daily.sunset[0]) ?? 1080, off: j.utc_offset_seconds, at: Date.now() };
+  try { sessionStorage.setItem(key, JSON.stringify(wx)); } catch (e) {}
+  return wx;
+}
 async function drawWeather() {
   const el = $("#weather");
-  el.hidden = !(S.showWeather && S.city);
-  if (el.hidden) return;
-  const key = "devtab:wx:" + S.city.lat + "," + S.city.lon;
   let wx = null;
-  try { const c = JSON.parse(sessionStorage.getItem(key) || "null"); if (c && Date.now() - c.at < 20 * 60 * 1000) wx = c; } catch (e) {}
-  if (!wx) {
-    try {
-      const r = await fetch(`https://api.open-meteo.com/v1/forecast?latitude=${S.city.lat}&longitude=${S.city.lon}&current=temperature_2m,weather_code&timezone=auto`);
-      const j = await r.json(); wx = { t: Math.round(j.current.temperature_2m), c: j.current.weather_code, at: Date.now() };
-      sessionStorage.setItem(key, JSON.stringify(wx));
-    } catch (e) { el.hidden = true; return; }
-  }
+  try { wx = await getWx(); } catch (e) { wx = null; }
+  sceneData.wx = wx ? { code: wx.c, cloud: wx.cloud, wind: wx.wind, rise: wx.rise, set: wx.set, off: wx.off } : null;
+  drawTimeTravel();
+  el.hidden = !(S.showWeather && wx);
+  if (el.hidden) return;
   el.innerHTML = `<b>${wx.t}°</b><span>${esc(WMO[wx.c] || "")} · ${esc(S.city.name)}</span>`;
 }
+setInterval(drawWeather, 20 * 60 * 1000);
 
 /* ---------- hacker boot sequence ---------- */
 async function boot() {
@@ -357,11 +422,32 @@ function drawSettings() {
       ${m.bg === "photo" ? `<button type="button" class="btn" data-photo>${icon("shuffle")}New random photo</button>` : ""}
       ${m.bg === "custom" ? `<label class="btn">${icon("upload")}Choose image or video<input type="file" accept="image/*,video/*" data-upload hidden></label><p class="note">MP4 or WebM loops, or any image. It's stored in this browser only, never uploaded.</p>` : ""}
       ${m.bg === "solid" ? `<label class="row">Colour <input type="color" data-solid value="${esc(m.solid || "#0b0d12")}"></label>` : ""}
+      ${m.bg === "city" ? `<form class="addlink" data-gh><input name="u" placeholder="GitHub username" value="${esc(S.github || "")}" autocomplete="off" spellcheck="false"><button class="btn btn--sm">Build my city</button></form>
+        <p class="note">Every day of your last year is a building; busier days are taller. It shows public contributions; turn on <b>Private contributions</b> in your GitHub profile settings to include private work.${ext ? " DevTab reads github.com directly once you allow it." : ""}</p>` : ""}
+      ${m.bg === "sky" ? `<label class="row">Weather <select data-skywx>${[["live", "Live (your city)"], ["clear", "Clear"], ["cloudy", "Cloudy"], ["rain", "Rain"], ["thunder", "Thunderstorm"], ["snow", "Snow"], ["fog", "Fog"]].map(([k, n]) => `<option value="${k}"${(m.skyWx || "live") === k ? " selected" : ""}>${n}</option>`).join("")}</select></label>
+        <p class="note">${S.city ? `Real weather, sunrise and sunset for <b>${esc(S.city.name)}</b>.` : "Set your city under <b>Widgets</b> to get your real weather and sunrise."} Drag the time-travel slider to move through the day.</p>` : ""}
     </section>
     <section><h3>Colour &amp; contrast</h3>
       <label class="row">Accent <input type="color" data-k="accent" value="${esc(m.accent)}"></label>
       <label class="row">Dim background <input type="range" min="0" max="80" data-k="dim" value="${m.dim}"></label>
       <label class="row">Blur background <input type="range" min="0" max="20" data-k="blur" value="${m.blur}"></label>
+    </section>
+    <section><h3>Effects</h3>
+      <label class="row">3D parallax background <input type="checkbox" data-fx="parallax" ${S.fx.parallax ? "checked" : ""}></label>
+      <label class="row">Time-travel slider (Live sky) <input type="checkbox" data-fx="timeTravel" ${S.fx.timeTravel ? "checked" : ""}></label>
+      <label class="row">Particle clock <input type="checkbox" data-fx="particleClock" ${S.fx.particleClock ? "checked" : ""}></label>
+      <label class="row">Gravity easter egg <input type="checkbox" data-fx="gravity" ${S.fx.gravity ? "checked" : ""}></label>
+      <p class="note">Shake the mouse hard, or type <code>gravity</code>, and the page falls down. Throw things around, then double-click to put it back.</p>
+      ${S.fx.gravity ? `<button type="button" class="btn btn--ghost" data-gravity>🪐 Try gravity now</button>` : ""}
+      <label class="row">Launch animations <input type="checkbox" data-fx="launch" ${S.fx.launch ? "checked" : ""}></label>
+      <p class="note">A short scene plays as a site opens from a shortcut, the dock or search. Type a site name like <code>youtube</code> or <code>github</code> to open it.</p>
+    </section>
+    <section><h3>Hub &amp; extras</h3>
+      <label class="row">Tab pet <input type="checkbox" data-fx="pet" ${S.fx.pet ? "checked" : ""}></label>
+      <label class="row">"What was I doing?" after a restart <input type="checkbox" data-fx="recall" ${S.fx.recall ? "checked" : ""}></label>
+      <label class="row">Browsing Wrapped (stays on this device) <input type="checkbox" data-fx="wrapped" ${S.fx.wrapped ? "checked" : ""}></label>
+      <button type="button" class="btn btn--ghost" data-hub>✦ Open the Hub (H or Ctrl+K)</button>
+      <p class="note">The Hub has Focus mode, ambient Sounds, Workspaces, your Wrapped, page Tools and your pet's settings.</p>
     </section>
     <section><h3>Clock</h3>
       <label class="row">Your name <input type="text" maxlength="24" data-name value="${esc(S.name)}" placeholder="for the greeting"></label>
@@ -413,6 +499,8 @@ drawer.addEventListener("click", async (e) => {
   const bg = t.closest("[data-bg]");
   if (bg) { M().bg = bg.dataset.bg; await persist(); paintBackground(); drawSettings(); return; }
   if (t.closest("[data-photo]")) return newPhoto();
+  if (t.closest("[data-gravity]")) { closeSettings(); setTimeout(startGravity, 300); return; }
+  if (t.closest("[data-hub]")) { closeSettings(); openHub(); return; }
   if (t.closest("[data-bm-manager]")) { try { chrome.tabs.create({ url: navigator.userAgent.includes("Edg/") ? "edge://favorites" : "chrome://bookmarks" }); } catch (e) { toast("Open chrome://bookmarks from the address bar."); } return; }
   const ln = t.closest("[data-links]");
   if (ln) { S.links = ln.dataset.links; await persist(); drawLinks(); drawSettings(); return; }
@@ -434,6 +522,8 @@ drawer.addEventListener("input", (e) => {
 drawer.addEventListener("change", async (e) => {
   const t = e.target;
   if (t.dataset.t) { S[t.dataset.t] = t.checked; await persist(); applyLook(); drawWeather(); drawDock(); }
+  else if (t.dataset.fx) { S.fx[t.dataset.fx] = t.checked; await persist(); applyLook(); drawTimeTravel(); drawPet(); drawSettings(); }
+  else if (t.matches("[data-skywx]")) { M().skyWx = t.value; sceneData.preview = t.value; await persist(); }
   else if (t.matches("[data-dockfolder]")) { S.dockFolder = t.value; await persist(); drawDock(); }
   else if (t.matches("[data-engine]")) { S.engine = t.value; await persist(); drawHints(); }
   else if (t.matches("[data-upload]") && t.files[0]) {
@@ -448,6 +538,13 @@ drawer.addEventListener("submit", async (e) => {
   if (f.matches("[data-addlink]")) {
     let u = f.u.value.trim(); if (!/^https?:\/\//i.test(u)) u = "https://" + u;
     S.custom.push({ t: f.t.value.trim(), u }); await persist(); drawLinks(); drawSettings();
+  } else if (f.matches("[data-gh]")) {
+    const u = f.u.value.trim().replace(/^@/, "").replace(/^https?:\/\/github\.com\//i, "").split("/")[0];
+    if (!/^[a-z\d](?:[a-z\d-]{0,38})$/i.test(u)) return toast("That doesn't look like a GitHub username.");
+    // ask right away, while the click still counts; if you say no, the public mirror is used
+    if (ext && chrome.permissions) await chrome.permissions.request({ origins: [GH_ORIGIN] }).catch(() => false);
+    S.github = u; await persist(); await loadCity(true); drawSettings();
+    toast(sceneData.gh && sceneData.gh.days ? `Built @${u}'s city: ${sceneData.gh.total.toLocaleString()} contributions.` : (sceneData.gh && sceneData.gh.error) || "Couldn't build the city.");
   } else if (f.matches("[data-city]")) {
     const c = f.c.value.trim(); if (!c) return;
     try {
@@ -462,11 +559,14 @@ drawer.addEventListener("submit", async (e) => {
 
 /* ---------- toast ---------- */
 let toastT = 0;
-function toast(msg) {
+function toast(msg, opts = {}) {
   let t = $(".toast");
   if (!t) { t = document.createElement("div"); t.className = "toast"; t.setAttribute("role", "status"); document.body.appendChild(t); }
-  t.textContent = msg; t.classList.add("is-on");
-  clearTimeout(toastT); toastT = setTimeout(() => t.classList.remove("is-on"), 2600);
+  t.textContent = msg;
+  t.classList.toggle("has-act", !!opts.undo);
+  if (opts.undo) { const b = document.createElement("button"); b.type = "button"; b.textContent = "Undo"; b.addEventListener("click", () => { opts.undo(); t.classList.remove("is-on"); }); t.append(b); }
+  t.classList.add("is-on");
+  clearTimeout(toastT); toastT = setTimeout(() => t.classList.remove("is-on"), opts.undo ? 5000 : 2600);
 }
 
 /* ---------- keys ---------- */
@@ -481,17 +581,33 @@ document.addEventListener("keydown", (e) => {
 onChange((ns) => {
   if (!ns) return;
   const before = JSON.stringify([S.mode, S.dev, S.hacker, S.photo]);
-  S = { ...structuredClone(DEFAULTS), ...ns, dev: { ...DEFAULTS.dev, ...ns.dev }, hacker: { ...DEFAULTS.hacker, ...ns.hacker } };
+  S = { ...structuredClone(DEFAULTS), ...ns, dev: { ...DEFAULTS.dev, ...ns.dev }, hacker: { ...DEFAULTS.hacker, ...ns.hacker }, fx: { ...DEFAULTS.fx, ...ns.fx }, focus: { ...DEFAULTS.focus, ...ns.focus } };
   applyLook(); drawTodos(); drawLinks(); drawDock(); drawWeather();
   if (JSON.stringify([S.mode, S.dev, S.hacker, S.photo]) !== before) paintBackground();
 });
 
 /* ---------- start ---------- */
 initLinks({ S: () => S, persist, toast, icon, esc });
+initTimeTravel(sceneData, () => S);
+const mouse = { x: null, y: null };
+addEventListener("pointermove", (e) => { mouse.x = e.clientX; mouse.y = e.clientY; }, { passive: true });
+const hubCtx = { S: () => S, persist, toast, icon, esc, favicon, host, mouse, gravityActive, focusing: () => !$("#focusChip").hidden };
+initHub(hubCtx);
+initFocus(hubCtx);
+initSounds(hubCtx);
+initWorkspaces(hubCtx);
+initWrapped(hubCtx);
+initTools(hubCtx);
+initPet(hubCtx);
+initRecall(hubCtx);
+initParticleClock($("#clock"));
+initGravity({ enabled: () => S.fx.gravity, onStart: () => { closeSettings(); $("#urlCard").classList.remove("is-on"); } });
 applyLook();
 paintBackground();
 drawDock();
 drawHints(); drawLinks(); drawWeather();
 await loadTasks(); drawTodos();
 boot();
+const hubFromHash = () => { if (location.hash === "#hub") { history.replaceState(null, "", location.pathname); openHub(); } };
+hubFromHash(); addEventListener("hashchange", hubFromHash);
 if (!matchMedia("(pointer: coarse)").matches) q.focus({ preventScroll: true });

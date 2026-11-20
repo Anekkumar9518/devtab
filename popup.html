@@ -1,0 +1,29 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>DevTab tools</title>
+  <link rel="stylesheet" href="css/popup.css">
+</head>
+<body data-mode="dev">
+  <header class="top"><span class="mark"></span><b>DevTab</b><span class="sub" id="sub">tools for this page</span></header>
+  <div class="focus" id="focus" hidden></div>
+  <main class="tools">
+    <button type="button" class="tool" data-tool="color">
+      <span class="ic ic--c"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m2 22 1-1h3l9-9"/><path d="M3 21v-3l9-9"/><path d="m15 6 3.4-3.4a2.1 2.1 0 1 1 3 3L18 9l.4.4a2.1 2.1 0 1 1-3 3l-3.8-3.8a2.1 2.1 0 1 1 3-3Z"/></svg></span>
+      <span class="tx"><b>Colour picker</b><small>Any pixel → HEX, RGB, HSL + palette</small></span><kbd>Alt ⇧ 1</kbd>
+    </button>
+    <button type="button" class="tool" data-tool="images">
+      <span class="ic ic--i"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="9" cy="9" r="2"/><path d="m21 15-5-5L5 21"/></svg></span>
+      <span class="tx"><b>Image size finder</b><small>Real resolution vs shown size</small></span><kbd>Alt ⇧ 2</kbd>
+    </button>
+    <button type="button" class="tool" data-tool="fonts">
+      <span class="ic ic--f"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 7V4h16v3M9 20h6M12 4v16"/></svg></span>
+      <span class="tx"><b>Font finder</b><small>Which font, size, weight, colour</small></span><kbd>Alt ⇧ 3</kbd>
+    </button>
+  </main>
+  <p class="err" id="err" hidden></p>
+  <footer class="foot"><button type="button" id="hub">✦ Open DevTab Hub</button><span>Esc closes a tool</span></footer>
+  <script type="module" src="js/popup.js"></script>
+</body>
+</html>

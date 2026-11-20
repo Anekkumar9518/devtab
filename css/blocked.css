@@ -1,0 +1,58 @@
+@font-face { font-family: "Space Grotesk"; src: url(../fonts/space-grotesk.woff2) format("woff2"); font-weight: 300 700; }
+@font-face { font-family: "JetBrains Mono"; src: url(../fonts/jetbrains-mono.woff2) format("woff2"); font-weight: 400 800; }
+:root { color-scheme: dark; }
+* { box-sizing: border-box; }
+body { --accent: #7c9cff; --mono: "JetBrains Mono", ui-monospace, Consolas, monospace; margin: 0; min-height: 100vh; overflow: hidden; display: grid; place-items: center; background: radial-gradient(ellipse at 50% 30%, #1a1440, #06070d 70%); color: #eef0f6; font-family: "Space Grotesk", system-ui, sans-serif; -webkit-font-smoothing: antialiased; }
+button { font: inherit; color: inherit; border: 0; background: none; cursor: pointer; }
+#rain { position: fixed; inset: 0; width: 100%; height: 100%; opacity: 0; }
+.glow { position: fixed; left: 50%; top: 40%; width: 900px; height: 900px; transform: translate(-50%, -50%); background: radial-gradient(circle, color-mix(in srgb, var(--accent) 30%, transparent), transparent 60%); filter: blur(30px); animation: breathe 6s ease-in-out infinite; pointer-events: none; }
+@keyframes breathe { 50% { transform: translate(-50%, -50%) scale(1.12); opacity: .7; } }
+.wall { position: relative; z-index: 1; display: grid; justify-items: center; text-align: center; padding: 24px; max-width: 760px; }
+.ring { position: relative; width: 170px; height: 170px; margin-bottom: 18px; }
+.ring svg { width: 100%; height: 100%; transform: rotate(-90deg); }
+.ring circle { fill: none; stroke-width: 7; }
+.ring__bg { stroke: rgba(255, 255, 255, .08); }
+.ring__fg { stroke: var(--accent); stroke-linecap: round; stroke-dasharray: 603; filter: drop-shadow(0 0 10px var(--accent)); transition: stroke-dashoffset 1s linear; }
+.ring__lock { position: absolute; inset: 0; display: grid; place-items: center; color: var(--accent); animation: pulse 2.4s ease-in-out infinite; }
+.ring__lock svg { width: 54px; height: 54px; transform: none; }
+@keyframes pulse { 50% { transform: scale(1.08); filter: drop-shadow(0 0 16px var(--accent)); } }
+.kicker { margin: 0; font-family: var(--mono); font-size: 13px; letter-spacing: .2em; text-transform: uppercase; color: var(--accent); }
+.title { position: relative; margin: 8px 0 6px; font-size: clamp(64px, 11vw, 136px); line-height: .95; letter-spacing: -.05em; font-weight: 700; background: linear-gradient(180deg, #fff 35%, color-mix(in srgb, var(--accent) 60%, #fff)); -webkit-background-clip: text; background-clip: text; color: transparent; }
+.title::before, .title::after { content: attr(data-text); position: absolute; inset: 0; -webkit-text-fill-color: currentColor; pointer-events: none; }
+.title::before { color: #ff2a6d; animation: glitch 3s infinite steps(1); mix-blend-mode: screen; opacity: .8; }
+.title::after { color: #05d9e8; animation: glitch 2.6s infinite reverse steps(1); mix-blend-mode: screen; opacity: .8; }
+@keyframes glitch { 0%, 86%, 100% { clip-path: inset(0 0 100% 0); transform: none; } 88% { clip-path: inset(15% 0 60% 0); transform: translate(-6px, 2px); } 91% { clip-path: inset(55% 0 20% 0); transform: translate(6px, -2px); } 94% { clip-path: inset(35% 0 40% 0); transform: translate(-3px, 0); } 96% { clip-path: inset(0 0 100% 0); } }
+.host { margin: 6px 0 22px; font-size: 18px; color: rgba(238, 240, 246, .7); }
+.host b { color: #fff; font-family: var(--mono); font-weight: 600; padding: 2px 10px; border-radius: 8px; background: rgba(255, 255, 255, .08); }
+.left { display: grid; gap: 2px; margin-bottom: 14px; }
+.left b { font-family: var(--mono); font-size: 44px; letter-spacing: .02em; color: #fff; text-shadow: 0 0 30px color-mix(in srgb, var(--accent) 60%, transparent); }
+.left span { font-size: 13px; color: rgba(238, 240, 246, .6); }
+.line { min-height: 24px; margin: 0 0 26px; font-size: 16px; color: rgba(238, 240, 246, .78); font-style: italic; transition: opacity .4s; }
+.acts { display: flex; flex-wrap: wrap; justify-content: center; gap: 12px; }
+.b { position: relative; overflow: hidden; height: 48px; padding: 0 26px; border-radius: 14px; font-weight: 600; font-size: 15px; }
+.b--main { background: var(--accent); color: #0a0a0a; box-shadow: 0 12px 40px -12px var(--accent); }
+.b--main:hover { filter: brightness(1.1); }
+.b--hold { border: 1px solid rgba(255, 255, 255, .16); color: rgba(238, 240, 246, .75); }
+.b__fill { position: absolute; inset: 0; width: 0; background: rgba(255, 90, 90, .28); }
+.b__t { position: relative; }
+.b--hold.is-holding .b__fill { width: 100%; transition: width 2.5s linear; }
+.term { width: min(620px, 100%); margin: 0 0 18px; padding: 16px 18px; text-align: left; font-family: var(--mono); font-size: 13.5px; line-height: 1.7; white-space: pre-wrap; border: 1px solid color-mix(in srgb, var(--accent) 40%, transparent); background: rgba(0, 0, 0, .7); color: var(--accent); }
+.term::after { content: "▋"; animation: blink 1s steps(1) infinite; }
+@keyframes blink { 50% { opacity: 0; } }
+body.is-done .ring__fg { stroke: #5bd6a4; }
+body.is-done .title { background: linear-gradient(180deg, #fff, #5bd6a4); -webkit-background-clip: text; background-clip: text; }
+
+/* Hacker look */
+body[data-mode="hacker"] { background: #000; font-family: var(--mono); }
+body[data-mode="hacker"] #rain { opacity: .55; }
+body[data-mode="hacker"] .glow { background: radial-gradient(circle, rgba(255, 40, 70, .22), transparent 60%); }
+body[data-mode="hacker"] .wall::before { content: ""; position: fixed; inset: 0; z-index: -1; background: repeating-linear-gradient(0deg, rgba(0, 0, 0, .35) 0 1px, transparent 1px 3px); pointer-events: none; }
+body[data-mode="hacker"] .title { font-family: var(--mono); font-size: clamp(44px, 9vw, 110px); letter-spacing: -.02em; background: none; color: #ff2a4d; -webkit-text-fill-color: #ff2a4d; text-shadow: 0 0 24px rgba(255, 42, 77, .8), 0 0 2px #fff; }
+body[data-mode="hacker"] .ring__fg { stroke: #ff2a4d; filter: drop-shadow(0 0 10px #ff2a4d); }
+body[data-mode="hacker"] .ring__lock { color: #ff2a4d; }
+body[data-mode="hacker"] .kicker { color: #ff2a4d; }
+body[data-mode="hacker"] .host b, body[data-mode="hacker"] .b { border-radius: 2px; }
+body[data-mode="hacker"] .left b { color: var(--accent); text-shadow: 0 0 20px var(--accent); }
+body[data-mode="hacker"] .b--main { background: var(--accent); }
+body[data-mode="hacker"] .line { color: var(--accent); font-style: normal; }
+@media (prefers-reduced-motion: reduce) { *, *::before, *::after { animation: none !important; transition: none !important; } }
