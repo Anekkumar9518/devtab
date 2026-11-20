@@ -1,6 +1,6 @@
 # DevTab
 
-A new tab page for developers, with two looks: **Developer** and **Hacker**. A live sky with your city's real weather, your GitHub year as a 3D city, a clock made of particles, and a page that falls apart when you shake the mouse. Plus the useful stuff: focus mode that blocks distracting sites, ambient sounds, workspaces, a browsing Wrapped, a tab pet, page tools (colour picker, image size and font finder), shortcuts with real site icons, a bookmarks dock, and reminders that ring.
+A new tab page for developers, with two looks: **Developer** and **Hacker**. A live sky with your city's real weather, your GitHub year as a 3D city, a clock made of particles, and a page that falls apart when you shake the mouse. Plus the useful stuff: focus mode that blocks distracting sites, ambient sounds, workspaces, a browsing Wrapped, a tab pet, page tools (colour picker, image size and font finder, image and video downloader), shortcuts with real site icons, a bookmarks dock, and reminders that ring.
 
 **[Try the live demo →](https://anekkumar9518.github.io/devtab/)** (it runs in any browser; installing the extension makes it your new tab and unlocks the features that need it)
 
@@ -53,9 +53,12 @@ After Chrome restarts, the first new tab shows what you were working on last tim
 Click the DevTab button in the toolbar, or use a shortcut:
 - <kbd>Alt</kbd>+<kbd>Shift</kbd>+<kbd>1</kbd> **Colour picker:** the page freezes, a magnifier follows the cursor, and a click copies the exact pixel's HEX with RGB, HSL and a palette.
 - <kbd>Alt</kbd>+<kbd>Shift</kbd>+<kbd>2</kbd> **Image size finder:** hover any image (even CSS backgrounds) to see its real resolution next to the size it's shown at, whether it's blurry or oversized, its format, file size and alt text. "All images" lists every image on the page, largest first.
+- <kbd>Alt</kbd>+<kbd>Shift</kbd>+<kbd>4</kbd> **Media downloader:** every image on the page (the largest version from `srcset`, CSS backgrounds, inline SVGs and the share image) in a grid you can filter by size and type, then download one, a selection, or all of them into `Downloads/<site>/`. The Videos tab lists every video the site serves as a file (MP4, WebM, MOV…) with its resolution and length. Videos on YouTube, Netflix, Instagram and other streaming services stream in protected pieces and their terms don't allow downloading, so DevTab says so instead of saving them.
 - <kbd>Alt</kbd>+<kbd>Shift</kbd>+<kbd>3</kbd> **Font finder:** hover text to see the font that's actually rendered (not just the CSS list), its size, weight, line height and colour, with a live sample and "Copy CSS".
 
 ![Font finder and colour picker on a web page](docs/tools.png)
+
+![The media downloader: every image on the page, filtered to 500px and up, two selected](docs/media.png)
 
 Everything above can be switched on or off in Settings.
 
@@ -107,12 +110,12 @@ popup.html             the toolbar button
 - **Live sky:** weather, cloud cover, wind, sunrise and sunset from [Open-Meteo](https://open-meteo.com) (free, no key), refreshed every 20 minutes and drawn in the city's own time.
 - **GitHub city:** your public contribution calendar, read straight from github.com once you allow it (or from the public [github-contributions-api](https://github-contributions-api.jogruber.de) mirror if you don't). Turn on **Private contributions** in your GitHub profile settings to include private work.
 - **Focus blocking** uses `webNavigation` to send matching sites to the blocked page. **Workspaces** and **"What was I doing?"** read your tabs' addresses with `tabs`. **Wrapped** adds up time per site with `tabs` and `idle`, stored only in `chrome.storage.local`.
-- **Page tools** use `activeTab` + `scripting`, so DevTab can only get into a page when you click its button or press a shortcut. The colour picker takes one screenshot of the visible tab.
+- **Page tools** use `activeTab` + `scripting`, so DevTab can only get into a page when you click its button or press a shortcut. The colour picker takes one screenshot of the visible tab; the media downloader saves files with `chrome.downloads`.
 - **Sounds and the ringtone** play from one offscreen document, because a background worker can't play audio. It closes when nothing is playing.
 - **Reminders** use `chrome.alarms`, so they fire even when no DevTab tab is open. If Chrome was closed when one was due, it rings when Chrome starts.
 - Everything respects **reduced motion**: animated backgrounds show a still frame, and the particle clock, gravity, pet and launch scenes switch off.
 
-Permissions: `storage`, `unlimitedStorage`, `topSites`, `favicon`, `bookmarks` (read-only), `alarms`, `notifications`, `offscreen`, `tabs`, `webNavigation`, `idle`, `scripting` and `activeTab`. Site access is optional and asked for one site at a time: when you save a shortcut (removed right after) or connect GitHub.
+Permissions: `storage`, `unlimitedStorage`, `topSites`, `favicon`, `bookmarks` (read-only), `alarms`, `notifications`, `offscreen`, `tabs`, `webNavigation`, `idle`, `scripting`, `activeTab` and `downloads` (to save the images and videos you pick). Site access is optional and asked for one site at a time: when you save a shortcut (removed right after) or connect GitHub.
 
 ## Credits
 

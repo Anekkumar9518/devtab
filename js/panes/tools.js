@@ -41,7 +41,7 @@ function render(el) {
       <section class="tl__card tl__card--web">
         <h4>On any website</h4>
         <p>Click the <b>DevTab</b> button in your toolbar (pin it with the 🧩 menu) or press a shortcut:</p>
-        <div class="tl__keys"><div><kbd>Alt</kbd><kbd>Shift</kbd><kbd>1</kbd><span>Colour picker with a magnifier</span></div><div><kbd>Alt</kbd><kbd>Shift</kbd><kbd>2</kbd><span>Image size finder</span></div><div><kbd>Alt</kbd><kbd>Shift</kbd><kbd>3</kbd><span>Font finder</span></div></div>
+        <div class="tl__keys"><div><kbd>Alt</kbd><kbd>Shift</kbd><kbd>1</kbd><span>Colour picker with a magnifier</span></div><div><kbd>Alt</kbd><kbd>Shift</kbd><kbd>2</kbd><span>Image size finder</span></div><div><kbd>Alt</kbd><kbd>Shift</kbd><kbd>3</kbd><span>Font finder</span></div><div><kbd>Alt</kbd><kbd>Shift</kbd><kbd>4</kbd><span>Download images &amp; videos</span></div></div>
       </section>
     </div>`;
   let hist = []; try { hist = JSON.parse(localStorage.getItem("devtab:colors") || "[]"); } catch (e) {}

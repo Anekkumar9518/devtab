@@ -2,7 +2,7 @@
   "manifest_version": 3,
   "name": "DevTab: Developer & Hacker New Tab",
   "short_name": "DevTab",
-  "version": "2.0.0",
+  "version": "2.1.0",
   "description": "A developer & hacker new tab: live weather sky, GitHub city, particle clock, focus mode, ambient sounds, workspaces, a tab pet, page tools and reminders that ring.",
   "chrome_url_overrides": {
     "newtab": "newtab.html"
@@ -20,7 +20,8 @@
     "webNavigation",
     "idle",
     "scripting",
-    "activeTab"
+    "activeTab",
+    "downloads"
   ],
   "icons": {
     "16": "icons/icon16.png",
@@ -38,7 +39,7 @@
     "http://*/*"
   ],
   "action": {
-    "default_title": "DevTab tools: colour picker, image size, font finder",
+    "default_title": "DevTab tools: colour picker, image size, font finder, media downloader",
     "default_icon": {
       "16": "icons/icon16.png",
       "48": "icons/icon48.png"
@@ -63,6 +64,12 @@
         "default": "Alt+Shift+3"
       },
       "description": "Font finder on this page"
+    },
+    "media-downloader": {
+      "suggested_key": {
+        "default": "Alt+Shift+4"
+      },
+      "description": "Download images and videos from this page"
     }
   }
 }
