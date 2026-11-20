@@ -35,7 +35,10 @@ export const DEFAULTS = {
   fx: {
     parallax: true, timeTravel: true, particleClock: true, gravity: true, launch: true,
     pet: true, petKind: "robot", petName: "Bit", recall: true, wrapped: false,
+    petEverywhere: false, petHidden: [], air: false,
   },
+  tabs: { autoSleep: 60, keepPinned: true },
+  news: { tab: "india", ticker: true },
   focus: { minutes: 25, sites: ["youtube.com", "instagram.com", "facebook.com", "x.com", "twitter.com", "reddit.com", "netflix.com"] },
 };
 
@@ -52,6 +55,8 @@ export async function load() {
     out.hacker = { ...DEFAULTS.hacker, ...(s.hacker || {}) };
     out.fx = { ...DEFAULTS.fx, ...(s.fx || {}) };
     out.focus = { ...DEFAULTS.focus, ...(s.focus || {}) };
+    out.tabs = { ...DEFAULTS.tabs, ...(s.tabs || {}) };
+    out.news = { ...DEFAULTS.news, ...(s.news || {}) };
   }
   return out;
 }

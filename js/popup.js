@@ -19,6 +19,7 @@ if (f && Date.now() < f.endsAt) {
 
 document.querySelector(".tools").addEventListener("click", async (e) => {
   const b = e.target.closest("[data-tool]"); if (!b) return;
+  if (b.dataset.tool === "shot") { b.querySelector("small").textContent = "Scrolling and capturing…"; document.body.classList.add("is-busy"); }
   const r = await chrome.runtime.sendMessage({ type: "tool", tool: b.dataset.tool, tabId: tab.id });
   if (r && r.ok) window.close();
   else { $("#err").hidden = false; $("#err").textContent = (r && r.error) || "Something went wrong."; }

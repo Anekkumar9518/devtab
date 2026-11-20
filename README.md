@@ -1,12 +1,68 @@
 # DevTab
 
-A new tab page for developers, with two looks: **Developer** and **Hacker**. A live sky with your city's real weather, your GitHub year as a 3D city, a clock made of particles, and a page that falls apart when you shake the mouse. Plus the useful stuff: focus mode that blocks distracting sites, ambient sounds, workspaces, a browsing Wrapped, a tab pet, page tools (colour picker, image size and font finder, image and video downloader), shortcuts with real site icons, a bookmarks dock, and reminders that ring.
+A new tab page for developers, with two looks: **Developer** and **Hacker**. Control the web with your hands like Iron Man. A live sky with your city's real weather, your GitHub year as a 3D city, a clock made of particles, and a page that falls apart when you shake the mouse. Plus the useful stuff: focus mode that blocks distracting sites, ambient sounds, workspaces, a browsing Wrapped, a tab pet, page tools (colour picker, image size and font finder, image and video downloader), shortcuts with real site icons, a bookmarks dock, and reminders that ring.
 
 **[Try the live demo →](https://anekkumar9518.github.io/devtab/)** (it runs in any browser; installing the extension makes it your new tab and unlocks the features that need it)
 
 ![DevTab in Developer mode](docs/developer.png)
 
 ![DevTab in Hacker mode: Matrix rain, glitch clock, CRT scanlines](docs/hacker.png)
+
+## What's new in 3.0
+
+### ✋ Air control: your hands are the mouse
+Turn it on in the Hub and your webcam becomes a controller on **every tab**. Hand and face tracking run on your computer with Google's MediaPipe models, bundled inside the extension. The camera image never leaves your machine.
+
+| Gesture | Does |
+| --- | --- |
+| ☝️ Point | Moves a holographic cursor that locks onto links and buttons |
+| 🤏 Pinch | Click (pinch twice to double-click) |
+| 🤏 Pinch + move | Drag the page |
+| ✋ Palm up / down | Scroll |
+| ✋ Palm swipe left / right | Previous / next tab |
+| ✋ Palm held still | Pause the video |
+| 👍 Thumbs up (hold) | Play the video |
+| ✌️ Victory (hold) | Go back |
+| ✊ Fist (hold) | Minimize the window |
+| 🤟 Love sign (hold) | New tab |
+| 👎 Thumbs down (hold) | Reload |
+| 🙂 Look away | The video pauses, and plays again when you look back |
+
+Hold gestures fill a ring first, so nothing fires by accident. A HUD panel shows your tracked hand, and a side dock (Back, Forward, Reload, New tab, Close tab, Minimize) can be "air-clicked" too.
+
+![Air control on a web page: the holographic cursor locked on a link, the hand panel and the action dock](docs/air.png)
+
+![The Air control pane in the Hub](docs/air-pane.png)
+
+### 🐾 Your pet visits every website
+Switch on "Take Bit to every website" and your pet comes along. It stands on headings, jumps between images and buttons, follows them as you scroll, naps on search bars and runs from your cursor. Click it for hearts, throw it, or press × to keep it off a site.
+
+![The pet standing on Wikipedia's Taj Mahal picture](docs/pet-web.png)
+
+### ⏳ Website time machine
+From the toolbar button (or the Hub's Tools), see how any site looked in every year since 1996. Bars show how often the Internet Archive saved it each year, and you can "Play the years" as a time-lapse or compare **Then vs now** side by side. Years before a site existed say so: *"In 2003, flipkart.com didn't exist yet. It first appeared on the web on 8 Jun 2007."*
+
+![Flipkart in 2007: "flipkart.com is coming soon"](docs/time-machine.png)
+
+### 🧬 Tech stack detector
+See what any site is built with: CMS (WordPress, Shopify, Wix…), framework (React, Next.js, Vue, Angular…), analytics and ad tags (Google Analytics and Tag Manager IDs, Meta Pixel, Google Ads, Hotjar, Clarity…), hosting (Cloudflare, Vercel, Netlify, Hostinger…), payments, chat widgets and SEO plugins, with versions where available. "Copy report" puts it all on your clipboard for client and competitor notes.
+
+![Tech stack of nextjs.org: React, Next.js 16.5, Tailwind CSS, Vercel](docs/stack.png)
+
+### 📸 Full-page screenshot with an editor
+Captures the whole page, not just the screen (sticky headers are hidden after the first screen so they don't repeat). Then mark it up with arrows, boxes, pen, highlighter, text, **blur** for private details, and crop. Undo/redo, download as PNG or copy.
+
+![The screenshot editor with an arrow, a box, a blurred area and text](docs/screenshot-editor.png)
+
+### 💤 Tab sleeper
+Tabs you haven't used for a while (15 min to 2 h, or off) go to sleep and give their memory back; they reload when you click them. Tabs playing sound are never put to sleep, and pinned ones can stay awake. The Tabs pane shows everything open, finds duplicates and closes them in one click, and can put every other tab to sleep right away.
+
+![The Tabs pane: tabs open, asleep, memory freed and duplicates](docs/tabs.png)
+
+### 📰 News
+India, World, Tech and AI headlines (Google News, with a हिन्दी option), plus Hacker News, GitHub trending and dev.to, in the Hub, with a scrolling headline ticker on the new tab.
+
+![dev.to's top posts in the News pane](docs/news.png)
 
 ## What's new in 2.0
 
@@ -50,7 +106,7 @@ A pixel robot (or cat) lives at the bottom of the page. It walks around, naps on
 After Chrome restarts, the first new tab shows what you were working on last time (your in-progress task, or the page you were on) and brings all your tabs back in one click.
 
 ### Page tools, on any website
-Click the DevTab button in the toolbar, or use a shortcut:
+Click the DevTab button in the toolbar for all seven (colour picker, image size, font finder, media downloader, tech stack, full-page screenshot, time machine), or use a shortcut:
 - <kbd>Alt</kbd>+<kbd>Shift</kbd>+<kbd>1</kbd> **Colour picker:** the page freezes, a magnifier follows the cursor, and a click copies the exact pixel's HEX with RGB, HSL and a palette.
 - <kbd>Alt</kbd>+<kbd>Shift</kbd>+<kbd>2</kbd> **Image size finder:** hover any image (even CSS backgrounds) to see its real resolution next to the size it's shown at, whether it's blurry or oversized, its format, file size and alt text. "All images" lists every image on the page, largest first.
 - <kbd>Alt</kbd>+<kbd>Shift</kbd>+<kbd>4</kbd> **Media downloader:** every image on the page (the largest version from `srcset`, CSS backgrounds, inline SVGs and the share image) in a grid you can filter by size and type, then download one, a selection, or all of them into `Downloads/<site>/`. The Videos tab lists every video the site serves as a file (MP4, WebM, MOV…) with its resolution and length. Videos on YouTube, Netflix, Instagram and other streaming services stream in protected pieces and their terms don't allow downloading, so DevTab says so instead of saving them.
@@ -101,7 +157,9 @@ js/backgrounds.js      the canvas scenes; js/scenes/ has the live sky and the Gi
 js/fx/                 particle clock, gravity, launch scenes, pet, "what was I doing?"
 js/hub.js, js/panes/   the Hub and its panes: focus, sounds, workspaces, wrapped, tools
 js/ambient-engine.js   the sound generator (Web Audio)
-js/inject/             the page tools, injected only when you start one
+js/inject/             the page tools (injected only when you start one), Air control's HUD and the pet on websites
+js/air-engine.js       hand and face tracking (MediaPipe, bundled in js/vendor/mediapipe)
+time.html, shot.html   the time machine and the screenshot editor
 background.js, js/bg/  reminders, focus blocking, the audio page, Wrapped tracking, tools
 blocked.html           what a blocked site turns into during focus
 popup.html             the toolbar button
@@ -112,13 +170,16 @@ popup.html             the toolbar button
 - **Focus blocking** uses `webNavigation` to send matching sites to the blocked page. **Workspaces** and **"What was I doing?"** read your tabs' addresses with `tabs`. **Wrapped** adds up time per site with `tabs` and `idle`, stored only in `chrome.storage.local`.
 - **Page tools** use `activeTab` + `scripting`, so DevTab can only get into a page when you click its button or press a shortcut. The colour picker takes one screenshot of the visible tab; the media downloader saves files with `chrome.downloads`.
 - **Sounds and the ringtone** play from one offscreen document, because a background worker can't play audio. It closes when nothing is playing.
+- **Air control** runs MediaPipe's gesture recognizer and face detector in the offscreen page, reading camera frames straight from the video track, and sends only hand points and a gesture name to the tab you're looking at. Its content script and the pet's run on websites only after you switch them on and Chrome grants access to all sites.
+- **Time machine** reads the Internet Archive's index of captures (one per month) and shows the snapshot nearest the middle of each year, in a sandboxed frame.
+- **Tab sleeper** uses `chrome.tabs.discard`.
 - **Reminders** use `chrome.alarms`, so they fire even when no DevTab tab is open. If Chrome was closed when one was due, it rings when Chrome starts.
 - Everything respects **reduced motion**: animated backgrounds show a still frame, and the particle clock, gravity, pet and launch scenes switch off.
 
-Permissions: `storage`, `unlimitedStorage`, `topSites`, `favicon`, `bookmarks` (read-only), `alarms`, `notifications`, `offscreen`, `tabs`, `webNavigation`, `idle`, `scripting`, `activeTab` and `downloads` (to save the images and videos you pick). Site access is optional and asked for one site at a time: when you save a shortcut (removed right after) or connect GitHub.
+Permissions: `storage`, `unlimitedStorage`, `topSites`, `favicon`, `bookmarks` (read-only), `alarms`, `notifications`, `offscreen`, `tabs`, `webNavigation`, `idle`, `scripting`, `activeTab` and `downloads` (to save the images and videos you pick). Host access to `news.google.com` (headlines) and `web.archive.org` (time machine). Access to all sites is optional, asked only when you turn on Air control or the pet on websites; single-site access is asked when you save a shortcut (removed right after) or connect GitHub. The camera is used only while Air control is on.
 
 ## Credits
 
-Fonts: [Space Grotesk](https://fonts.google.com/specimen/Space+Grotesk) and [JetBrains Mono](https://www.jetbrains.com/lp/mono/), both under the SIL Open Font License. Physics: [matter.js](https://github.com/liabru/matter-js) (MIT). Photos are by the Unsplash photographers credited on screen.
+Fonts: [Space Grotesk](https://fonts.google.com/specimen/Space+Grotesk) and [JetBrains Mono](https://www.jetbrains.com/lp/mono/), both under the SIL Open Font License. Physics: [matter.js](https://github.com/liabru/matter-js) (MIT). Hand and face tracking: [MediaPipe](https://github.com/google-ai-edge/mediapipe) (Apache 2.0). Website history: the [Internet Archive](https://archive.org). Photos are by the Unsplash photographers credited on screen.
 
 Made by [Anek Kumar](https://www.anekkumar.in). MIT licensed. Also see [AK Phone](https://github.com/Anekkumar9518/ak-phone), an Android-style phone that runs in a web page.

@@ -9,6 +9,9 @@ import { initSounds } from "./panes/sounds.js";
 import { initWorkspaces } from "./panes/workspaces.js";
 import { initWrapped } from "./panes/wrapped.js";
 import { initTools } from "./panes/tools.js";
+import { initTabs } from "./panes/tabs.js";
+import { initNews, drawTicker } from "./panes/news.js";
+import { initAir } from "./panes/air.js";
 import { initRecall } from "./fx/recall.js";
 import { initPet, drawPet } from "./fx/pet.js";
 import { launch, SITES } from "./fx/launch.js";
@@ -444,6 +447,8 @@ function drawSettings() {
     </section>
     <section><h3>Hub &amp; extras</h3>
       <label class="row">Tab pet <input type="checkbox" data-fx="pet" ${S.fx.pet ? "checked" : ""}></label>
+      <label class="row">Pet visits every website <input type="checkbox" data-every="petEverywhere" ${S.fx.petEverywhere ? "checked" : ""}></label>
+      <button type="button" class="btn btn--ghost" data-airpane>✋ Air control: hand gestures…</button>
       <label class="row">"What was I doing?" after a restart <input type="checkbox" data-fx="recall" ${S.fx.recall ? "checked" : ""}></label>
       <label class="row">Browsing Wrapped (stays on this device) <input type="checkbox" data-fx="wrapped" ${S.fx.wrapped ? "checked" : ""}></label>
       <button type="button" class="btn btn--ghost" data-hub>✦ Open the Hub (H or Ctrl+K)</button>
@@ -473,6 +478,7 @@ function drawSettings() {
     </section>
     <section><h3>Widgets</h3>
       <label class="row">Tasks &amp; reminders <input type="checkbox" data-t="showTodo" ${S.showTodo ? "checked" : ""}></label>
+      <label class="row">News ticker <input type="checkbox" data-nt ${S.news.ticker ? "checked" : ""}></label>
       <label class="row">Weather <input type="checkbox" data-t="showWeather" ${S.showWeather ? "checked" : ""}></label>
       <form class="addlink" data-city><input name="c" placeholder="${S.city ? esc(S.city.name) : "Your city, e.g. Noida"}"><button class="btn btn--sm">Set city</button></form>
       <label class="row">Hacker boot animation <input type="checkbox" data-t="boot" ${S.boot ? "checked" : ""}></label>
@@ -501,6 +507,7 @@ drawer.addEventListener("click", async (e) => {
   if (t.closest("[data-photo]")) return newPhoto();
   if (t.closest("[data-gravity]")) { closeSettings(); setTimeout(startGravity, 300); return; }
   if (t.closest("[data-hub]")) { closeSettings(); openHub(); return; }
+  if (t.closest("[data-airpane]")) { closeSettings(); openHub("air"); return; }
   if (t.closest("[data-bm-manager]")) { try { chrome.tabs.create({ url: navigator.userAgent.includes("Edg/") ? "edge://favorites" : "chrome://bookmarks" }); } catch (e) { toast("Open chrome://bookmarks from the address bar."); } return; }
   const ln = t.closest("[data-links]");
   if (ln) { S.links = ln.dataset.links; await persist(); drawLinks(); drawSettings(); return; }
@@ -522,7 +529,9 @@ drawer.addEventListener("input", (e) => {
 drawer.addEventListener("change", async (e) => {
   const t = e.target;
   if (t.dataset.t) { S[t.dataset.t] = t.checked; await persist(); applyLook(); drawWeather(); drawDock(); }
+  else if (t.dataset.every) { const on = t.checked && (await allowEverywhere()); S.fx[t.dataset.every] = on; await persist(); drawSettings(); if (t.checked && !on) toast("DevTab needs access to websites for this."); }
   else if (t.dataset.fx) { S.fx[t.dataset.fx] = t.checked; await persist(); applyLook(); drawTimeTravel(); drawPet(); drawSettings(); }
+  else if (t.matches("[data-nt]")) { S.news.ticker = t.checked; await persist(); drawTicker(); }
   else if (t.matches("[data-skywx]")) { M().skyWx = t.value; sceneData.preview = t.value; await persist(); }
   else if (t.matches("[data-dockfolder]")) { S.dockFolder = t.value; await persist(); drawDock(); }
   else if (t.matches("[data-engine]")) { S.engine = t.value; await persist(); drawHints(); }
@@ -581,7 +590,7 @@ document.addEventListener("keydown", (e) => {
 onChange((ns) => {
   if (!ns) return;
   const before = JSON.stringify([S.mode, S.dev, S.hacker, S.photo]);
-  S = { ...structuredClone(DEFAULTS), ...ns, dev: { ...DEFAULTS.dev, ...ns.dev }, hacker: { ...DEFAULTS.hacker, ...ns.hacker }, fx: { ...DEFAULTS.fx, ...ns.fx }, focus: { ...DEFAULTS.focus, ...ns.focus } };
+  S = { ...structuredClone(DEFAULTS), ...ns, dev: { ...DEFAULTS.dev, ...ns.dev }, hacker: { ...DEFAULTS.hacker, ...ns.hacker }, fx: { ...DEFAULTS.fx, ...ns.fx }, focus: { ...DEFAULTS.focus, ...ns.focus }, tabs: { ...DEFAULTS.tabs, ...ns.tabs }, news: { ...DEFAULTS.news, ...ns.news } };
   applyLook(); drawTodos(); drawLinks(); drawDock(); drawWeather();
   if (JSON.stringify([S.mode, S.dev, S.hacker, S.photo]) !== before) paintBackground();
 });
@@ -591,13 +600,18 @@ initLinks({ S: () => S, persist, toast, icon, esc });
 initTimeTravel(sceneData, () => S);
 const mouse = { x: null, y: null };
 addEventListener("pointermove", (e) => { mouse.x = e.clientX; mouse.y = e.clientY; }, { passive: true });
-const hubCtx = { S: () => S, persist, toast, icon, esc, favicon, host, mouse, gravityActive, focusing: () => !$("#focusChip").hidden };
+// Features that run on every website need Chrome's OK for all sites; asked only when you switch one on.
+const allowEverywhere = async () => { if (!ext || !chrome.permissions) return false; try { return await chrome.permissions.request({ origins: ["https://*/*", "http://*/*"] }); } catch (e) { return false; } };
+const hubCtx = { S: () => S, persist, toast, icon, esc, favicon, host, mouse, gravityActive, allowEverywhere, focusing: () => !$("#focusChip").hidden };
 initHub(hubCtx);
 initFocus(hubCtx);
 initSounds(hubCtx);
 initWorkspaces(hubCtx);
 initWrapped(hubCtx);
 initTools(hubCtx);
+initAir(hubCtx);
+initNews(hubCtx);
+initTabs(hubCtx);
 initPet(hubCtx);
 initRecall(hubCtx);
 initParticleClock($("#clock"));

@@ -1,0 +1,36 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Screenshot · DevTab</title>
+  <link rel="icon" href="icons/icon48.png">
+  <link rel="stylesheet" href="css/shot.css">
+</head>
+<body>
+  <header class="top">
+    <div class="brand"><span class="mark"></span><b>Screenshot</b><span id="meta">loading…</span></div>
+    <nav class="tools" id="tools" aria-label="Annotation tools">
+      <button type="button" data-tool="arrow" aria-pressed="true" title="Arrow (A)"><svg viewBox="0 0 24 24"><path d="M5 19 19 5M9 5h10v10"/></svg></button>
+      <button type="button" data-tool="rect" title="Box (R)"><svg viewBox="0 0 24 24"><rect x="4" y="6" width="16" height="12" rx="2"/></svg></button>
+      <button type="button" data-tool="pen" title="Pen (P)"><svg viewBox="0 0 24 24"><path d="M3 17c3-1 4-6 7-6s2 5 5 5 4-7 6-8"/></svg></button>
+      <button type="button" data-tool="mark" title="Highlighter (H)"><svg viewBox="0 0 24 24"><path d="m9 11-6 6v3h9l3-3M22 12l-4.6 4.6a2 2 0 0 1-2.8 0l-5.2-5.2a2 2 0 0 1 0-2.8L14 4"/></svg></button>
+      <button type="button" data-tool="text" title="Text (T)"><svg viewBox="0 0 24 24"><path d="M4 7V4h16v3M9 20h6M12 4v16"/></svg></button>
+      <button type="button" data-tool="blur" title="Blur private info (B)"><svg viewBox="0 0 24 24"><path d="M3 3h4v4H3zM10 3h4v4h-4zM17 3h4v4h-4zM3 10h4v4H3zM17 10h4v4h-4zM3 17h4v4H3zM10 17h4v4h-4zM17 17h4v4h-4z"/></svg></button>
+      <button type="button" data-tool="crop" title="Crop (C)"><svg viewBox="0 0 24 24"><path d="M6 2v14a2 2 0 0 0 2 2h14M18 22V8a2 2 0 0 0-2-2H2"/></svg></button>
+      <span class="sep"></span>
+      <span class="colors" id="colors"></span>
+      <span class="sep"></span>
+      <button type="button" id="undo" title="Undo (Ctrl+Z)"><svg viewBox="0 0 24 24"><path d="M9 14 4 9l5-5"/><path d="M4 9h10a6 6 0 0 1 0 12h-3"/></svg></button>
+      <button type="button" id="redo" title="Redo (Ctrl+Y)"><svg viewBox="0 0 24 24"><path d="m15 14 5-5-5-5"/><path d="M20 9H10a6 6 0 0 0 0 12h3"/></svg></button>
+    </nav>
+    <div class="acts"><button type="button" class="btn btn--ghost" id="copy">Copy</button><button type="button" class="btn" id="save">Download PNG</button></div>
+  </header>
+  <main class="stage" id="stage">
+    <div class="paper" id="paper"><canvas id="cv"></canvas><div class="croprect" id="croprect" hidden><button type="button" id="cropOk">Crop</button></div></div>
+    <p class="loading" id="loading">Stitching your screenshot…</p>
+  </main>
+  <div class="toast" id="toast"></div>
+  <script type="module" src="js/shot.js"></script>
+</body>
+</html>

@@ -1,0 +1,34 @@
+@font-face { font-family: "Space Grotesk"; src: url(../fonts/space-grotesk.woff2) format("woff2"); font-weight: 300 700; }
+@font-face { font-family: "JetBrains Mono"; src: url(../fonts/jetbrains-mono.woff2) format("woff2"); font-weight: 400 800; }
+:root { color-scheme: dark; --a: #7c9cff; }
+* { box-sizing: border-box; }
+[hidden] { display: none !important; }
+body { margin: 0; background: radial-gradient(circle at 50% -20%, #1d1a40, #08090f 60%); color: #eef0f6; font-family: "Space Grotesk", system-ui, sans-serif; }
+button { font: inherit; color: inherit; background: none; border: 0; cursor: pointer; }
+.top { position: sticky; top: 0; z-index: 5; display: flex; align-items: center; gap: 16px; padding: 12px 18px; background: rgba(10, 11, 20, .82); border-bottom: 1px solid rgba(255, 255, 255, .08); backdrop-filter: blur(16px); }
+.brand { display: flex; align-items: center; gap: 10px; min-width: 0; flex: 1; }
+.brand b { font-size: 15px; } .brand span:last-child { font: 12px "JetBrains Mono", monospace; color: rgba(238, 240, 246, .55); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.mark { width: 10px; height: 10px; border-radius: 3px; background: var(--a); box-shadow: 0 0 12px var(--a); flex: none; }
+.tools { display: flex; align-items: center; gap: 4px; padding: 5px; border-radius: 16px; background: rgba(255, 255, 255, .05); border: 1px solid rgba(255, 255, 255, .08); }
+.tools button { width: 38px; height: 38px; display: grid; place-items: center; border-radius: 11px; color: rgba(238, 240, 246, .7); transition: background .15s, color .15s; }
+.tools button:hover { background: rgba(255, 255, 255, .08); color: #fff; }
+.tools button[aria-pressed="true"] { background: var(--a); color: #0a0a0a; box-shadow: 0 6px 18px -6px var(--a); }
+.tools button:disabled { opacity: .3; cursor: default; }
+.tools svg { width: 19px; height: 19px; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+.sep { width: 1px; height: 24px; margin: 0 4px; background: rgba(255, 255, 255, .12); }
+.colors { display: flex; gap: 5px; padding: 0 4px; }
+.colors button { width: 22px; height: 22px; border-radius: 50%; box-shadow: inset 0 0 0 2px rgba(255, 255, 255, .25); transition: transform .12s; }
+.colors button[aria-pressed="true"] { transform: scale(1.18); box-shadow: 0 0 0 2px #0a0b14, 0 0 0 4px #fff; }
+.acts { display: flex; gap: 8px; flex: 1; justify-content: flex-end; }
+.btn { height: 40px; padding: 0 18px; border-radius: 12px; background: var(--a); color: #0a0a0a; font-weight: 700; font-size: 14px; box-shadow: 0 10px 26px -10px var(--a); }
+.btn--ghost { background: none; color: #eef0f6; border: 1px solid rgba(255, 255, 255, .16); box-shadow: none; }
+.stage { display: grid; justify-items: center; padding: 28px 24px 80px; }
+.paper { position: relative; line-height: 0; border-radius: 10px; overflow: hidden; box-shadow: 0 30px 90px rgba(0, 0, 0, .6), 0 0 0 1px rgba(255, 255, 255, .08); }
+.paper canvas { display: block; max-width: min(1400px, calc(100vw - 48px)); height: auto; cursor: crosshair; }
+.croprect { position: absolute; border: 2px dashed #fff; box-shadow: 0 0 0 9999px rgba(0, 0, 0, .55); pointer-events: none; }
+.croprect button { pointer-events: auto; position: absolute; right: 6px; bottom: 6px; padding: 7px 14px; border-radius: 10px; background: var(--a); color: #0a0a0a; font-weight: 700; font-size: 13px; line-height: 1; }
+.loading { font-size: 15px; color: rgba(238, 240, 246, .6); }
+.txt { position: absolute; z-index: 3; min-width: 40px; padding: 2px 4px; border: 1px dashed rgba(255, 255, 255, .7); background: rgba(0, 0, 0, .25); outline: 0; font: 700 22px "Space Grotesk", sans-serif; line-height: 1.2; white-space: pre; }
+.toast { position: fixed; left: 50%; bottom: 26px; transform: translate(-50%, 16px); opacity: 0; padding: 10px 18px; border-radius: 999px; background: rgba(14, 16, 26, .95); border: 1px solid var(--a); font-size: 14px; transition: .2s; pointer-events: none; }
+.toast.on { opacity: 1; transform: translate(-50%, 0); }
+@media (max-width: 1100px) { .top { flex-wrap: wrap; } .brand { flex-basis: 100%; } }

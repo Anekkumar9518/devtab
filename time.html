@@ -1,0 +1,41 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Time machine · DevTab</title>
+  <link rel="icon" href="icons/icon48.png">
+  <link rel="stylesheet" href="css/time.css">
+</head>
+<body data-mode="dev">
+  <div class="stars" aria-hidden="true"></div>
+  <header class="hd">
+    <div class="site"><img id="fav" alt=""><div><h1 id="host">…</h1><p id="born">Asking the Internet Archive…</p></div></div>
+    <form class="go" id="go"><input id="other" placeholder="Try another site, e.g. flipkart.com" spellcheck="false" autocomplete="off"><button class="btn">Travel</button></form>
+  </header>
+
+  <section class="tl" aria-label="Years">
+    <div class="tl__bars" id="bars"></div>
+    <input type="range" id="year" min="1996" max="2026" step="1" aria-label="Year">
+    <div class="tl__ctl">
+      <button type="button" class="btn btn--ghost" id="play">▶ Play the years</button>
+      <div class="seg"><button type="button" data-view="one" aria-pressed="true">This year</button><button type="button" data-view="vs" aria-pressed="false">Then vs now</button></div>
+      <a class="lnk" id="wb" target="_blank" rel="noopener">Open in the Wayback Machine ↗</a>
+    </div>
+  </section>
+
+  <main class="stage" id="stage">
+    <div class="frame" id="f1">
+      <div class="bar"><i></i><i></i><i></i><span class="addr" id="a1"></span><b class="yr" id="y1"></b></div>
+      <div class="view"><iframe id="i1" referrerpolicy="no-referrer" sandbox="allow-scripts allow-same-origin allow-popups allow-popups-to-escape-sandbox" title="The site in the chosen year"></iframe><div class="msg" id="m1" hidden></div><div class="load" id="l1"><span></span>Travelling back…</div></div>
+    </div>
+    <div class="frame" id="f2" hidden>
+      <div class="bar"><i></i><i></i><i></i><span class="addr" id="a2"></span><b class="yr is-now" id="y2"></b></div>
+      <div class="view"><iframe id="i2" referrerpolicy="no-referrer" sandbox="allow-scripts allow-same-origin allow-popups allow-popups-to-escape-sandbox" title="The site most recently"></iframe><div class="load" id="l2"><span></span>Loading…</div></div>
+    </div>
+  </main>
+  <p class="fact" id="fact"></p>
+  <footer class="ft">Snapshots from the <a href="https://web.archive.org" target="_blank" rel="noopener">Internet Archive's Wayback Machine</a>. Old pages can load slowly or miss images the archive didn't save.</footer>
+  <script type="module" src="js/time.js"></script>
+</body>
+</html>

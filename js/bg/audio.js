@@ -13,16 +13,29 @@ export function sync() {
   return busy;
 }
 async function doSync() {
-  const { ringing = false } = await chrome.storage.session.get("ringing");
-  const amb = (await chrome.storage.local.get(AMBIENT))[AMBIENT] || { on: false, levels: {} };
+  const { ringing = false, offReasons = [] } = await chrome.storage.session.get(["ringing", "offReasons"]);
+  const local = await chrome.storage.local.get([AMBIENT, "devtab:settings"]);
+  const amb = local[AMBIENT] || { on: false, levels: {} };
+  const air = !!((local["devtab:settings"] || {}).fx || {}).air;
   const playing = amb.on && Object.values(amb.levels || {}).some((v) => v > 0);
-  const has = chrome.offscreen.hasDocument ? await chrome.offscreen.hasDocument() : false;
-  if (!ringing && !playing) { if (has) await chrome.offscreen.closeDocument().catch(() => {}); return; }
-  if (!has) await chrome.offscreen.createDocument({ url: "offscreen.html", reasons: ["AUDIO_PLAYBACK"], justification: "Plays the reminder ringtone and the ambient sounds you turn on." }).catch(() => {});
-  chrome.runtime.sendMessage({ target: "offscreen", type: "state", ringing, on: amb.on, levels: amb.levels || {} }).catch(() => {});
+  let has = chrome.offscreen.hasDocument ? await chrome.offscreen.hasDocument() : false;
+  if (!ringing && !playing && !air) { if (has) await chrome.offscreen.closeDocument().catch(() => {}); return; }
+  // the camera needs the USER_MEDIA reason; a page opened for sound alone gets reopened with it
+  const reasons = air ? ["USER_MEDIA", "AUDIO_PLAYBACK"] : ["AUDIO_PLAYBACK"];
+  if (has && reasons.some((r) => !offReasons.includes(r))) { await chrome.offscreen.closeDocument().catch(() => {}); has = false; }
+  if (!has) {
+    await chrome.offscreen.createDocument({ url: "offscreen.html", reasons, justification: "Plays reminder ringtones and ambient sounds, and reads the webcam for Air control's hand tracking when you turn it on." }).catch(() => {});
+    await chrome.storage.session.set({ offReasons: reasons });
+  }
+  chrome.runtime.sendMessage({ target: "offscreen", type: "state", ringing, on: amb.on, levels: amb.levels || {}, air }).catch(() => {});
 }
 
 chrome.runtime.onMessage.addListener((m) => { if (m && m.type === "offscreen-ready") sync(); });
+chrome.storage.onChanged.addListener((ch, area) => {
+  if (area !== "local" || !ch["devtab:settings"]) return;
+  const o = ((ch["devtab:settings"].oldValue || {}).fx || {}).air, n = ((ch["devtab:settings"].newValue || {}).fx || {}).air;
+  if (o !== n) sync();
+});
 chrome.storage.onChanged.addListener(async (ch, area) => {
   if (area !== "local" || !ch[AMBIENT]) return;
   const amb = ch[AMBIENT].newValue || {};

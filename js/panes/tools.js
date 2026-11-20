@@ -38,10 +38,15 @@ function render(el) {
         <label class="tl__drop" data-drop><input type="file" accept="image/*" hidden data-file><span>Drop an image here, paste one, or <u>choose a file</u></span></label>
         <div data-img></div>
       </section>
+      <section class="tl__card tl__card--time">
+        <div class="tl__h"><span class="tl__ic tl__ic--t">⏳</span><div><h4>Website time machine</h4><p>See how any site looked in any year since 1996.</p></div></div>
+        <form class="fz__add" data-time><input name="u" placeholder="flipkart.com, google.com, your own site…" autocomplete="off" spellcheck="false"><button class="btn btn--sm">Travel</button></form>
+      </section>
       <section class="tl__card tl__card--web">
         <h4>On any website</h4>
         <p>Click the <b>DevTab</b> button in your toolbar (pin it with the 🧩 menu) or press a shortcut:</p>
         <div class="tl__keys"><div><kbd>Alt</kbd><kbd>Shift</kbd><kbd>1</kbd><span>Colour picker with a magnifier</span></div><div><kbd>Alt</kbd><kbd>Shift</kbd><kbd>2</kbd><span>Image size finder</span></div><div><kbd>Alt</kbd><kbd>Shift</kbd><kbd>3</kbd><span>Font finder</span></div><div><kbd>Alt</kbd><kbd>Shift</kbd><kbd>4</kbd><span>Download images &amp; videos</span></div></div>
+        <p>The toolbar button also has <b>Tech stack</b>, <b>Full-page screenshot</b> and <b>Time machine</b> for the page you're on.</p>
       </section>
     </div>`;
   let hist = []; try { hist = JSON.parse(localStorage.getItem("devtab:colors") || "[]"); } catch (e) {}
@@ -80,6 +85,7 @@ function render(el) {
     img.src = url;
   };
   $("[data-file]", el).addEventListener("change", (e) => inspect(e.target.files[0]));
+  $("[data-time]", el).addEventListener("submit", (e) => { e.preventDefault(); const u = e.target.u.value.trim(); if (!u) return; const url = (typeof chrome !== "undefined" && chrome.runtime && chrome.runtime.getURL ? chrome.runtime.getURL("time.html") : "time.html") + "?u=" + encodeURIComponent(u); window.open(url, "_blank"); });
   const drop = $("[data-drop]", el);
   drop.addEventListener("dragover", (e) => { e.preventDefault(); drop.classList.add("is-over"); });
   drop.addEventListener("dragleave", () => drop.classList.remove("is-over"));
