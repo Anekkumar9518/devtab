@@ -24,7 +24,7 @@ export const DEFAULTS = {
   showTodo: true,
   showWeather: true,
   showDock: true,
-  dockFolder: "1",                  // Chrome's bookmarks bar
+  dockFolder: "auto",               // every Bookmarks bar (device + Google account), else all bookmarks
   showGoogle: true,
   city: null,                        // { name, lat, lon }
   boot: true,

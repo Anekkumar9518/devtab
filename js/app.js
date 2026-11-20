@@ -470,9 +470,9 @@ function drawSettings() {
     </section>
     <section><h3>Bookmarks dock</h3>
       <label class="row">Show the dock <input type="checkbox" data-t="showDock" ${S.showDock ? "checked" : ""}></label>
-      <label class="row">Folder <select data-dockfolder>${FOLDERS.map(([id, n]) => `<option value="${esc(id)}"${(S.dockFolder || "1") === id ? " selected" : ""}>${esc(n)}</option>`).join("")}</select></label>
+      <label class="row">Folder <select data-dockfolder>${FOLDERS.map(([id, n]) => `<option value="${esc(id)}"${((S.dockFolder === "1" ? "auto" : S.dockFolder) || "auto") === id ? " selected" : ""}>${esc(n)}</option>`).join("")}</select></label>
       ${ext ? `<button type="button" class="btn btn--ghost" data-bm-manager>Open the bookmark manager</button>` : ""}
-      <p class="note">Shows your Chrome bookmarks. Add one with Ctrl+D on any page; it appears here straight away.</p>
+      <p class="note">Shows your Chrome bookmarks, both the ones on this device and the ones in your Google account. Add one with Ctrl+D on any page; it appears here straight away.</p>
     </section>
     <section><h3>Google bar</h3>
       <label class="row">Gmail, Images, apps &amp; account <input type="checkbox" data-t="showGoogle" ${S.showGoogle ? "checked" : ""}></label>
@@ -487,7 +487,7 @@ function drawSettings() {
     <section><button type="button" class="btn btn--ghost" data-reset>Reset everything</button>
       <p class="note">DevTab is open source · <a href="https://github.com/Anekkumar9518/devtab" target="_blank" rel="noopener">github.com/Anekkumar9518/devtab</a></p></section>`;
 }
-let FOLDERS = [["1", "Bookmarks bar"]];
+let FOLDERS = [["auto", "Bookmarks bar (all of them)"], ["all", "All bookmarks"]];
 const openSettings = async () => { try { FOLDERS = await bookmarkFolders(); } catch (e) {} drawSettings(); drawer.hidden = scrim.hidden = false; requestAnimationFrame(() => drawer.classList.add("is-in")); };
 const closeSettings = () => { drawer.classList.remove("is-in"); setTimeout(() => { drawer.hidden = scrim.hidden = true; }, 220); };
 $("#openSettings").addEventListener("click", openSettings);

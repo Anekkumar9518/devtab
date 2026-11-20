@@ -147,30 +147,51 @@ const DEMO_BM = [
   { t: "Search Console", u: "https://search.google.com/search-console" }, { t: "Meta Ads", u: "https://adsmanager.facebook.com" },
 ];
 const FOLDER = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 20h16a2 2 0 0 0 2-2V8a2 2 0 0 0-2-2h-7.9a2 2 0 0 1-1.7-.9L9.6 3.9A2 2 0 0 0 7.9 3H4a2 2 0 0 0-2 2v13a2 2 0 0 0 2 2Z"/></svg>';
+// Chrome keeps bookmarks in two places: on this device, and (when you're signed
+// in) in your Google account, each with its own Bookmarks bar and Other
+// bookmarks. "auto" is every Bookmarks bar together, or, if those are empty,
+// all your bookmarks; "all" is always everything.
+const VIRTUAL = { auto: "Bookmarks bar", all: "All bookmarks", 1: "Bookmarks bar" };
+const isBar = (n) => (n.folderType ? n.folderType === "bookmarks-bar" : n.id === "1");
+const asItem = (b) => ({ id: b.id, t: b.title, u: b.url });
+async function topFolders() { const [root] = await chrome.bookmarks.getTree(); return (root.children || []).filter((r) => r.folderType !== "managed"); }
 async function children(id) {
-  if (ext && chrome.bookmarks) return (await chrome.bookmarks.getChildren(id)).map((b) => ({ id: b.id, t: b.title, u: b.url }));
-  return id === "demo" || id === "1" ? DEMO_BM : [];
+  if (!(ext && chrome.bookmarks)) return id === "demo" || id === "1" || id === "auto" || id === "all" ? DEMO_BM : [];
+  if (VIRTUAL[id]) {
+    const tops = await topFolders();
+    const bars = tops.filter(isBar).flatMap((r) => (r.children || []).map(asItem));
+    if (id !== "all" && bars.length) return bars;
+    const seen = new Set(), out = [];
+    for (const r of [...tops.filter(isBar), ...tops.filter((r) => !isBar(r))]) for (const c of r.children || []) {
+      const k = c.url || "folder:" + c.id; if (seen.has(k)) continue; seen.add(k); out.push(asItem(c));
+    }
+    return out;
+  }
+  return (await chrome.bookmarks.getChildren(id)).map(asItem);
 }
+async function hasAnyBookmark() { try { const [root] = await chrome.bookmarks.getTree(); const any = (n) => !!n.url || (n.children || []).some(any); return any(root); } catch (e) { return false; } }
 // How much room the dock has: it sits between the to-do panel and the photo credit.
 const dockRoom = () => (innerWidth <= 900 ? innerWidth - 32 : Math.min(860, innerWidth - 760));
 export async function drawDock() {
   const S = C.S(), dock = $("#dock");
   dock.hidden = !S.showDock;
   if (dock.hidden) return;
-  const id = S.dockFolder || "1";
+  let id = S.dockFolder || "auto";
+  if (ext && chrome.bookmarks && !VIRTUAL[id]) { try { await chrome.bookmarks.get(id); } catch (e) { id = "auto"; } } // that folder was deleted
   let items = [];
   try { items = await children(id); } catch (e) { items = []; }
   // whatever doesn't fit goes behind a "+N" button that opens the whole folder
   const fit = Math.max(3, Math.floor((dockRoom() - 24) / 50));
   let shown = items, more = 0;
   if (items.length > fit) { shown = items.slice(0, fit - 1); more = items.length - shown.length; }
-  let name = "Bookmarks bar";
-  if (more && ext && chrome.bookmarks) { try { name = (await chrome.bookmarks.get(id))[0].title || name; } catch (e) {} }
+  let name = VIRTUAL[id] || "Bookmarks";
+  if (more && ext && chrome.bookmarks && !VIRTUAL[id]) { try { name = (await chrome.bookmarks.get(id))[0].title || name; } catch (e) {} }
+  const none = ext && chrome.bookmarks && !items.length && !(await hasAnyBookmark());
   dock.innerHTML = (shown.map((b) => b.u
     ? `<a class="dk" href="${esc(b.u)}" data-label="${esc(b.t || host(b.u))}" aria-label="${esc(b.t || host(b.u))}">${iconImg(b.u, b.t, null)}</a>`
     : `<button type="button" class="dk dk--folder" data-folder="${esc(b.id)}" data-name="${esc(b.t)}" data-label="${esc(b.t || "Folder")}" aria-label="Folder ${esc(b.t)}">${FOLDER}</button>`).join("")
     + (more ? `<button type="button" class="dk dk--more" data-folder="${esc(id)}" data-name="${esc(name)}" data-label="${more} more" aria-label="${more} more bookmarks">+${more}</button>` : ""))
-    || `<span class="dock__empty">${ext ? "No bookmarks in this folder yet. Press Ctrl+D on any page to add one." : "Your bookmarks show here in the extension."}</span>`;
+    || `<span class="dock__empty">${!ext ? "Your bookmarks show here in the extension." : none ? `No bookmarks in this Chrome profile yet. Press Ctrl+D on any page, or <button type="button" class="dock__imp" data-import>bring them from another browser</button>` : "No bookmarks in this folder. Pick another one in Settings → Bookmarks dock."}</span>`;
   wireIcons(dock);
 }
 const stack = [];
@@ -298,7 +319,10 @@ export function initLinks(ctx) {
   });
   dock.addEventListener("pointerleave", () => { dock.querySelectorAll(".dk").forEach((d) => d.style.removeProperty("--s")); if (tip) tip.classList.remove("is-on"); });
   let rz = 0; addEventListener("resize", () => { clearTimeout(rz); rz = setTimeout(drawDock, 200); });
-  dock.addEventListener("click", (e) => { const f = e.target.closest("[data-folder]"); if (f) { if (tip) tip.classList.remove("is-on"); stack.length = 0; openFolder(f.dataset.folder, f.dataset.name, f); } });
+  dock.addEventListener("click", (e) => {
+    if (e.target.closest("[data-import]")) { try { chrome.tabs.create({ url: navigator.userAgent.includes("Edg/") ? "edge://settings/profiles/importBrowsingData" : "chrome://settings/importData" }); } catch (x) {} return; }
+    const f = e.target.closest("[data-folder]"); if (f) { if (tip) tip.classList.remove("is-on"); stack.length = 0; openFolder(f.dataset.folder, f.dataset.name, f); }
+  });
   $("#dockPop").addEventListener("click", (e) => {
     const s = e.target.closest("[data-sub]"); if (s) return openFolder(s.dataset.sub, s.dataset.name, null);
     if (e.target.closest("[data-back]")) { stack.pop(); const p = stack[stack.length - 1]; openFolder(p.id, p.name, null, false); }
@@ -315,9 +339,12 @@ export function initLinks(ctx) {
 
 // Every bookmark folder, for the dock's folder picker in Settings.
 export async function bookmarkFolders() {
-  if (!(ext && chrome.bookmarks)) return [["1", "Bookmarks bar"]];
-  const out = [];
-  const walk = (n, depth) => { for (const c of n.children || []) if (!c.url) { out.push([c.id, "  ".repeat(depth) + (c.title || "Untitled")]); walk(c, depth + 1); } };
-  const [root] = await chrome.bookmarks.getTree(); walk(root, 0);
+  const out = [["auto", "Bookmarks bar (all of them)"], ["all", "All bookmarks"]];
+  if (!(ext && chrome.bookmarks)) return out;
+  const tops = await topFolders();
+  // with both device and account bookmarks there are two "Bookmarks bar" folders; say which is which
+  const both = tops.some((r) => r.syncing) && tops.some((r) => !r.syncing);
+  const walk = (n, depth) => { for (const c of n.children || []) if (!c.url) { out.push([c.id, "\u00a0\u00a0".repeat(depth) + (c.title || "Untitled")]); walk(c, depth + 1); } };
+  for (const r of tops) { out.push([r.id, (r.title || "Bookmarks") + (both ? (r.syncing ? " · Google account" : " · this device") : "")]); walk(r, 1); }
   return out;
 }
