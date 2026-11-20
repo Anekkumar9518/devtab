@@ -1,12 +1,56 @@
 # DevTab
 
-A new tab page for developers, with two looks: **Developer** and **Hacker**. Control the web with your hands like Iron Man. A live sky with your city's real weather, your GitHub year as a 3D city, a clock made of particles, and a page that falls apart when you shake the mouse. Plus the useful stuff: focus mode that blocks distracting sites, ambient sounds, workspaces, a browsing Wrapped, a tab pet, page tools (colour picker, image size and font finder, image and video downloader), shortcuts with real site icons, a bookmarks dock, and reminders that ring.
+A new tab page for developers, with two looks: **Developer** and **Hacker**. Control the web with your hands like Iron Man, or with just your face. Scan any website's code and steal a component, and spy on prices. A live sky with your city's real weather, your GitHub year as a 3D city, a clock made of particles, and a page that falls apart when you shake the mouse. Plus the useful stuff: focus mode that blocks distracting sites, ambient sounds, workspaces, a browsing Wrapped, a tab pet, page tools (colour picker, image size and font finder, image and video downloader), shortcuts with real site icons, a bookmarks dock, and reminders that ring.
 
 **[Try the live demo →](https://anekkumar9518.github.io/devtab/)** (it runs in any browser; installing the extension makes it your new tab and unlocks the features that need it)
 
 ![DevTab in Developer mode](docs/developer.png)
 
 ![DevTab in Hacker mode: Matrix rain, glitch clock, CRT scanlines](docs/hacker.png)
+
+## What's new in 4.0
+
+### 🌀 3D tab carousel
+Hold your open palm still and every tab in the window spreads out in a 3D ring with a live picture of each page. Move your hand to spin it, pinch to jump to a tab, close your fist to put it away. Works with the mouse wheel and arrow keys too.
+
+![The 3D tab carousel: tabs in a ring with live previews](docs/carousel.png)
+
+### ✏️ Air drawing
+Make the 🤟 sign (or press ✏ in the dock) and your index finger becomes a neon pen: pinch to draw over any page. Pick a colour, undo, clear, and **Save** a screenshot of the page with your drawing to Downloads.
+
+![Neon ink drawn in the air over a web page](docs/air-draw.png)
+
+### 🖐️ Your own gestures
+In Hub → Air control → **Your own gestures**, show a hand pose three times and give it a job: go to the top, open a site, take a screenshot, mute the tab, start Focus, play sounds and more. DevTab checks your new pose isn't too close to one you already have, and shows a live "✅ Recognised" readout so you can test it.
+
+![Teaching a custom gesture in the Air control pane](docs/gesture-teach.png)
+
+### 🙂 Hands-free with your face only
+Switch on **Face control** and a cursor follows your nose. **Wink** to click, raise your **eyebrows** to scroll down and open your mouth to scroll up, **tilt your head** to switch tabs, and **smile** to play or pause.
+
+### 🛡️ Shoulder-surfer shield and Away mode
+With the **shield** on, the page blurs the moment a second face appears behind you, and clears when they're gone. **Away mode** blurs the screen and mutes every tab when you've left your desk (after 1 minute, or what you pick), and unlocks as soon as your face is back. Face tracking runs on your computer; no image leaves it.
+
+![The shoulder-surfer shield: "Someone's watching"](docs/shield.png)
+
+### 🐾 The pet eats ads and evolves
+On websites, the pet hunts down ad slots and munches them ("Nom nom… 🍪"), and the Pet pane counts every ad eaten. It also grows up: finishing tasks and focus sessions, eating ads, petting it and visiting daily earn XP. The robot goes Bot → Bot+ → Mech → Jet Mech → Titan, and the cat goes Kitten → Bell cat → Ninja cat → Blade ninja → Shadow master, with new gear at every level and powers on websites (the ninja cat teleports in a puff of smoke, the Jet Mech rocket-jumps).
+
+![The pet eating an ad on a web page](docs/pet-ads.png)
+
+![The Pet pane: level, XP bar and the forms to unlock](docs/pet-levels.png)
+
+### 🩻 Website X-ray: steal any component
+From the toolbar button, hover anything on a page for a holographic scan: tag and classes, size, margin and padding, font, colours and layout. <kbd>↑</kbd> / <kbd>↓</kbd> walk to the parent or child. Click to pin it, and **Steal component** rebuilds that part as clean, standalone HTML + CSS (only the styles that matter, shorthand CSS, sprite icons pulled in, absolute links), with a live preview. Copy it or download it as an `.html` file.
+
+![Website X-ray: the "Read the docs" button stolen from getbootstrap.com, with a live preview of the rebuilt copy](docs/xray.png)
+
+### 🕵️ Price & change spy
+Open a product page or a competitor's site, pick **Price & change spy** from the toolbar button, and click the price or any text (or watch the whole page). On most shops DevTab spots the price for you. It then checks in the background (every 1 to 24 hours) and sends a notification when it changes: *"💰 Price dropped 13.7%: £60 → £51.77"*. The Spy pane in the Hub shows every watch with a price graph, lowest and highest price, and what the text said before. Checks run in your own browser, so you see your own prices; pages that build themselves with JavaScript are read in a muted background tab for a few seconds.
+
+![Picking a price to watch](docs/spy-pick.png)
+
+![The Spy pane with a price drop and a price graph](docs/spy.png)
 
 ## What's new in 3.0
 
@@ -20,11 +64,11 @@ Turn it on in the Hub and your webcam becomes a controller on **every tab**. Han
 | 🤏 Pinch + move | Drag the page |
 | ✋ Palm up / down | Scroll |
 | ✋ Palm swipe left / right | Previous / next tab |
-| ✋ Palm held still | Pause the video |
-| 👍 Thumbs up (hold) | Play the video |
+| ✋ Palm held still | All your tabs in a 3D carousel |
+| 👍 Thumbs up (hold) | Play / pause the video |
 | ✌️ Victory (hold) | Go back |
 | ✊ Fist (hold) | Minimize the window |
-| 🤟 Love sign (hold) | New tab |
+| 🤟 Love sign (hold) | Air drawing |
 | 👎 Thumbs down (hold) | Reload |
 | 🙂 Look away | The video pauses, and plays again when you look back |
 
@@ -157,7 +201,7 @@ js/backgrounds.js      the canvas scenes; js/scenes/ has the live sky and the Gi
 js/fx/                 particle clock, gravity, launch scenes, pet, "what was I doing?"
 js/hub.js, js/panes/   the Hub and its panes: focus, sounds, workspaces, wrapped, tools
 js/ambient-engine.js   the sound generator (Web Audio)
-js/inject/             the page tools (injected only when you start one), Air control's HUD and the pet on websites
+js/inject/             the page tools (injected only when you start one: X-ray, spy picker, colour picker…), Air control's HUD and the pet on websites
 js/air-engine.js       hand and face tracking (MediaPipe, bundled in js/vendor/mediapipe)
 time.html, shot.html   the time machine and the screenshot editor
 background.js, js/bg/  reminders, focus blocking, the audio page, Wrapped tracking, tools
@@ -170,13 +214,16 @@ popup.html             the toolbar button
 - **Focus blocking** uses `webNavigation` to send matching sites to the blocked page. **Workspaces** and **"What was I doing?"** read your tabs' addresses with `tabs`. **Wrapped** adds up time per site with `tabs` and `idle`, stored only in `chrome.storage.local`.
 - **Page tools** use `activeTab` + `scripting`, so DevTab can only get into a page when you click its button or press a shortcut. The colour picker takes one screenshot of the visible tab; the media downloader saves files with `chrome.downloads`.
 - **Sounds and the ringtone** play from one offscreen document, because a background worker can't play audio. It closes when nothing is playing.
-- **Air control** runs MediaPipe's gesture recognizer and face detector in the offscreen page, reading camera frames straight from the video track, and sends only hand points and a gesture name to the tab you're looking at. Its content script and the pet's run on websites only after you switch them on and Chrome grants access to all sites.
+- **Air control** runs MediaPipe's gesture recognizer and face landmarker in the offscreen page, reading camera frames straight from the video track, and sends only hand points and a gesture name to the tab you're looking at. Its content script and the pet's run on websites only after you switch them on and Chrome grants access to all sites.
 - **Time machine** reads the Internet Archive's index of captures (one per month) and shows the snapshot nearest the middle of each year, in a sandboxed frame.
 - **Tab sleeper** uses `chrome.tabs.discard`.
+- **Face control, the shield and Away mode** use MediaPipe's face landmarker (blink, brow and mouth movements and head angle) in the same offscreen page; only those numbers reach your tabs.
+- **Website X-ray** compares each element's computed styles with the browser's defaults and keeps only what differs.
+- **Price & change spy** stores your watches in `chrome.storage.local` and checks them with `chrome.alarms`. It asks for access to just that one site when you add a watch, reads the page with your own cookies, parses it in the offscreen page, and falls back to a muted background tab for pages built with JavaScript. If a site shows a captcha, DevTab stops and tells you; it never tries to get past one.
 - **Reminders** use `chrome.alarms`, so they fire even when no DevTab tab is open. If Chrome was closed when one was due, it rings when Chrome starts.
 - Everything respects **reduced motion**: animated backgrounds show a still frame, and the particle clock, gravity, pet and launch scenes switch off.
 
-Permissions: `storage`, `unlimitedStorage`, `topSites`, `favicon`, `bookmarks` (read-only), `alarms`, `notifications`, `offscreen`, `tabs`, `webNavigation`, `idle`, `scripting`, `activeTab` and `downloads` (to save the images and videos you pick). Host access to `news.google.com` (headlines) and `web.archive.org` (time machine). Access to all sites is optional, asked only when you turn on Air control or the pet on websites; single-site access is asked when you save a shortcut (removed right after) or connect GitHub. The camera is used only while Air control is on.
+Permissions: `storage`, `unlimitedStorage`, `topSites`, `favicon`, `bookmarks` (read-only), `alarms`, `notifications`, `offscreen`, `tabs`, `webNavigation`, `idle`, `scripting`, `activeTab` and `downloads` (to save the images and videos you pick). Host access to `news.google.com` (headlines) and `web.archive.org` (time machine). Access to all sites is optional, asked only when you turn on Air control, face features or the pet on websites; single-site access is asked when you save a shortcut (removed right after), connect GitHub, or add a site to the price & change spy. The camera is used only while Air control, face control, the shield or Away mode is on.
 
 ## Credits
 

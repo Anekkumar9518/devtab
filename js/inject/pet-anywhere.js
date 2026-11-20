@@ -30,10 +30,19 @@
     .p:hover .x { opacity: 1; }
     .fx { position: absolute; top: 2px; font: 18px sans-serif; color: #ff5c8a; pointer-events: none; animation: up 1.5s ease-out forwards; }
     .fx.z { color: #9fb0ff; font: 700 14px Consolas, monospace; }
+    .fx.crumb { color: #c98a4b; font-size: 14px; animation-name: crumb; } .fx.smoke { font-size: 26px; animation-name: poof; } .fx.flame { top: 60px; font-size: 14px; animation-name: flame; }
+    @keyframes crumb { from { transform: translate(0, 30px); opacity: 1; } to { transform: translate(var(--dx, 20px), 70px) rotate(90deg); opacity: 0; } }
+    @keyframes poof { from { transform: scale(.4); opacity: 1; } to { transform: scale(2); opacity: 0; } }
+    @keyframes flame { from { transform: translateY(0) scale(1); opacity: 1; } to { transform: translateY(20px) scale(.3); opacity: 0; } }
     @keyframes up { from { transform: translateY(0) scale(.6); opacity: 0; } 15% { opacity: 1; } to { transform: translateY(-56px) scale(1.2); opacity: 0; } }
   </style><div class="p"><canvas width="${P.SIZE}" height="${P.SIZE}"></canvas><span class="say"></span><button class="x" title="Hide the pet on this site">×</button></div>`;
   const el = root.querySelector(".p"), cv = el.querySelector("canvas"), say = el.querySelector(".say");
   const name = fx().petName || "Bit", kind = fx().petKind || "robot";
+  let pet = (await get("devtab:pet")) || {};
+  const level = () => pet.level || 1;
+  // ad slots from the big ad networks; only clearly-sized, visible ones count
+  const AD_SEL = 'ins.adsbygoogle, iframe[id^="google_ads_iframe"], iframe[src*="googlesyndication"], iframe[src*="doubleclick.net"], div[id^="div-gpt-ad"], [data-ad-slot], [data-google-query-id], amp-ad, [id*="taboola"], .trc_related_container, [id*="outbrain"], .OUTBRAIN, [aria-label="Advertisement" i], [aria-label="Advertisements" i], .ad-container, .ad-slot, .advertisement, [id^="ad-slot"]';
+  let ads = [];
 
   const speak = (t, ms = 3000) => { say.textContent = t; say.classList.add("on"); clearTimeout(say._t); say._t = setTimeout(() => say.classList.remove("on"), ms); };
   const puff = (ch, n = 1, cls = "") => { for (let i = 0; i < n; i++) { const s = document.createElement("span"); s.className = "fx " + cls; s.textContent = ch; s.style.left = 16 + Math.random() * 36 + "px"; s.style.animationDelay = i * 90 + "ms"; el.append(s); setTimeout(() => s.remove(), 1700); } };
@@ -51,6 +60,7 @@
       if (out.length > 60) break;
     }
     plats = out;
+    ads = fx().petEatsAds === false ? [] : [...document.querySelectorAll(AD_SEL)].filter((e) => { if (e.dataset.devtabEaten || e.closest("devtab-pet")) return false; const r = e.getBoundingClientRect(); return r.width >= 120 && r.height >= 40 && r.top > 30 && r.top < innerHeight - 60; }).map((e) => ({ e, kind: "ad" }));
   }
   scan(); setInterval(scan, 1500);
   addEventListener("scroll", () => { clearTimeout(scan._t); scan._t = setTimeout(scan, 120); }, { passive: true });
@@ -61,12 +71,34 @@
   const top = (p) => { const r = p.e.getBoundingClientRect(); return { r, y: r.top - H + 8 }; };
   const land = (p) => { const { r } = top(p); B.on = p; B.off = Math.max(0, Math.min(r.width - W, B.x - r.left)); B.vy = 0; };
   function jumpTo(p) {
-    const { r, y } = top(p), x = r.left + Math.max(0, Math.min(r.width - W, (r.width - W) * Math.random()));
-    B.jump = { x0: B.x, y0: B.y, x1: x, y1: y, t: 0, p }; B.st = "jump"; B.on = null; B.dir = x > B.x ? 1 : -1;
+    const { r, y } = top(p), x = r.left + Math.max(0, Math.min(r.width - W, (r.width - W) * (p.kind === "ad" ? 0.5 : Math.random())));
+    B.dir = x > B.x ? 1 : -1;
+    if (kind === "cat" && level() >= 3) { // ninja cats teleport
+      puff("💨", 2, "smoke"); B.x = x; B.y = y; land(p); B.st = B.after || "idle"; B.after = null; B.until = performance.now() + 1800; puff("💨", 2, "smoke");
+      if (B.st === "eat") startEat(p);
+      return;
+    }
+    B.jump = { x0: B.x, y0: B.y, x1: x, y1: y, t: 0, p, h: kind !== "cat" && level() >= 4 ? 190 : 110 }; B.st = "jump"; B.on = null;
+  }
+  // chomp an ad: jump on it, munch, and it's gone
+  function startEat(p) {
+    B.st = "eat"; B.until = performance.now() + 1700; B.eating = p.e;
+    speak("Nom nom… 🍪", 1600);
+    const e = p.e; e.dataset.devtabEaten = "1";
+    e.style.setProperty("transition", "transform 1.2s ease-in, opacity 1.2s ease-in, filter 1.2s", "important");
+    e.style.setProperty("transform-origin", "50% 0", "important");
+    requestAnimationFrame(() => { e.style.setProperty("transform", "scaleY(.05) scaleX(.6)", "important"); e.style.setProperty("opacity", "0", "important"); e.style.setProperty("filter", "blur(4px)", "important"); });
+    setTimeout(async () => {
+      e.style.setProperty("display", "none", "important");
+      pet = (await get("devtab:pet")) || pet; pet.adsEaten = (pet.adsEaten || 0) + 1;
+      await chrome.storage.local.set({ "devtab:pet": pet });
+      speak(`Yum! Ad #${pet.adsEaten} eaten 🍪`, 2200); puff("✦", 4); B.on = null; B.st = "fall"; B.vy = -6;
+    }, 1250);
   }
   function choose(now) {
     const r = Math.random();
     const search = plats.find((p) => p.kind === "search");
+    if (ads.length && r < 0.7) { const a = ads[0]; B.after = "eat"; jumpTo(a); return; }
     if (search && r < 0.15 && B.on !== search) { jumpTo(search); B.after = "sleep"; return; }
     if (plats.length && r < 0.55) { const near = plats.filter((p) => p !== B.on).sort((a, b) => Math.abs(top(a).r.left - B.x) + Math.abs(top(a).y - B.y) - (Math.abs(top(b).r.left - B.x) + Math.abs(top(b).y - B.y)))[Math.floor(Math.random() * 3)]; if (near) { jumpTo(near); B.after = near.kind === "img" ? "sit" : "idle"; return; } }
     if (r < 0.8) { B.st = "walk"; B.walkTo = Math.random(); B.until = now + 5000; return; }
@@ -83,8 +115,10 @@
     else if (B.st === "jump") {
       const j = B.jump; j.t = Math.min(1, j.t + 0.032);
       const { y } = top(j.p); j.y1 = y;
-      B.x = j.x0 + (j.x1 - j.x0) * j.t; B.y = j.y0 + (j.y1 - j.y0) * j.t - Math.sin(Math.PI * j.t) * 110;
-      if (j.t >= 1) { land(j.p); B.st = B.after || "idle"; B.after = null; B.until = now + (B.st === "sleep" ? 14000 : B.st === "sit" ? 6000 : 2000); if (B.st === "sleep") speak(Math.random() < 0.5 ? "Comfy search bar…" : "zZz"); }
+      B.x = j.x0 + (j.x1 - j.x0) * j.t; B.y = j.y0 + (j.y1 - j.y0) * j.t - Math.sin(Math.PI * j.t) * (j.h || 110);
+      if (j.h > 110 && B.frame % 3 === 0) puff("🔥", 1, "flame");
+      if (j.t >= 1 && B.after === "eat") { land(j.p); B.after = null; startEat(j.p); }
+      else if (j.t >= 1) { land(j.p); B.st = B.after || "idle"; B.after = null; B.until = now + (B.st === "sleep" ? 14000 : B.st === "sit" ? 6000 : 2000); if (B.st === "sleep") speak(Math.random() < 0.5 ? "Comfy search bar…" : "zZz"); }
     } else if (B.st === "fall") {
       B.vy = Math.min(B.vy + 0.9, 24); B.y += B.vy; B.x += B.vx; B.vx *= 0.97;
       B.x = Math.max(0, Math.min(innerWidth - W, B.x));
@@ -106,9 +140,11 @@
         if (B.st === "walk") { const target = (innerWidth - W) * B.walkTo, d = target - B.x; B.dir = Math.sign(d) || B.dir; B.x += Math.sign(d) * Math.min(Math.abs(d), 1.5); if (Math.abs(d) < 2 || now > B.until) { B.st = "idle"; B.until = now + 1500; } }
       }
       if (B.st === "sleep" && B.frame % 70 === 0) puff("z", 1, "z");
+      if (B.st === "eat" && B.frame % 9 === 0) puff(Math.random() < 0.5 ? "·" : "🍪", 1, "crumb");
+      if (B.st === "eat" && performance.now() > B.until) { B.st = "idle"; B.until = performance.now() + 800; }
       // run from a cursor that comes close
       const dx = B.x + W / 2 - mouse.x, dy = B.y + H / 2 - mouse.y;
-      if (B.st !== "flee" && Math.hypot(dx, dy) < 110 && now - mouse.t < 400) {
+      if (B.st !== "flee" && B.st !== "eat" && Math.hypot(dx, dy) < 110 && now - mouse.t < 400) {
         B.st = "flee"; B.until = now + 900; B.dir = dx > 0 ? 1 : -1; if (Math.random() < 0.3) speak(["Eek!", "Can't catch me!", "Hey!"][Math.floor(Math.random() * 3)], 1200);
       }
       if (B.st === "flee") {
@@ -117,10 +153,12 @@
         if (now > B.until && B.st === "flee") { B.st = "idle"; B.until = now + 800; }
       }
       if ((B.st === "idle" || B.st === "sit" || B.st === "sleep") && now > B.until) choose(now);
+      if (B.st === "idle" && ads.length && Math.random() < 0.01) choose(now); // spotted an ad: go get it
     }
     const pose = B.st === "sleep" || B.st === "sit" ? "sleep" : B.st === "jump" || B.st === "fall" ? "hop" : B.st === "walk" || B.st === "flee" ? (Math.floor(B.frame / (B.st === "flee" ? 4 : 8)) % 2 ? "walk1" : "walk2") : "idle";
     const eye = B.st === "sleep" ? "sleep" : B.st === "flee" ? "happy" : B.blink ? "blink" : "open";
-    P.paintPet(cv, { pose: B.st === "sit" ? "idle" : pose, eye, blink: B.blink, look: 0, flip: B.dir < 0 }, kind, hacker, accent, 0);
+    const eat = B.st === "eat" && Math.floor(B.frame / 8) % 2 === 0;
+    P.paintPet(cv, { pose: B.st === "sit" ? "idle" : B.st === "eat" ? "idle" : pose, eye: B.st === "eat" ? "happy" : eye, blink: B.blink, look: 0, flip: B.dir < 0, eat }, kind, hacker, accent, 0, level());
     el.style.transform = `translate(${Math.round(B.x)}px, ${Math.round(B.y)}px)`;
   }
   const loop = (t) => { requestAnimationFrame(loop); if (!document.hidden) step(t); };
@@ -145,6 +183,6 @@
     await chrome.storage.local.set({ "devtab:settings": s });
     speak("Bye! See you on other sites.", 1500); setTimeout(() => hostEl.remove(), 1200);
   });
-  chrome.storage.onChanged.addListener((ch) => { if (ch["devtab:settings"]) { S = ch["devtab:settings"].newValue || {}; if (!fx().petEverywhere) hostEl.remove(); } });
+  chrome.storage.onChanged.addListener((ch) => { if (ch["devtab:settings"]) { S = ch["devtab:settings"].newValue || {}; if (!fx().petEverywhere) hostEl.remove(); } if (ch["devtab:pet"]) pet = ch["devtab:pet"].newValue || pet; });
   setTimeout(() => speak(Math.random() < 0.5 ? `Ooh, ${host}!` : "New level unlocked", 2200), 900);
 })();

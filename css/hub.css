@@ -302,3 +302,54 @@ body[data-mode="hacker"] .ticker, body[data-mode="hacker"] .tk__lbl { border-rad
 .air__set { padding: 4px 16px 14px; border-radius: 18px; border: 1px solid var(--line); background: rgba(255, 255, 255, .02); }
 body[data-mode="hacker"] .air__hero, body[data-mode="hacker"] .air__live, body[data-mode="hacker"] .air__g, body[data-mode="hacker"] .air__g span, body[data-mode="hacker"] .air__set { border-radius: 2px; }
 @media (max-width: 760px) { .air__hero { grid-template-columns: 1fr; } .air__grid { grid-template-columns: 1fr 1fr; } }
+.air__sws { display: grid; gap: 8px; }
+.air__sw { display: flex; align-items: center; gap: 14px; padding: 14px 16px; border-radius: 16px; border: 1px solid var(--line); background: rgba(255, 255, 255, .025); cursor: pointer; }
+.air__sw span { flex: 1; display: grid; gap: 3px; } .air__sw b { font-size: 14.5px; } .air__sw small { font-size: 12.5px; color: var(--muted); line-height: 1.5; }
+.air__sw select { height: 26px; padding: 0 6px; border-radius: 7px; border: 1px solid var(--line); background: rgba(0, 0, 0, .3); color: var(--fg); font: inherit; font-size: 12px; }
+.air__sw input[type="checkbox"] { width: 20px; height: 20px; accent-color: #29e7ff; }
+.air__grid--face { grid-template-columns: repeat(5, 1fr); margin-top: 8px; }
+.air__grid--face .air__g span { background: rgba(255, 106, 213, .12); }
+.air__mine { display: grid; gap: 10px; }
+.air__list { display: grid; gap: 6px; }
+.air__my { display: flex; align-items: center; gap: 12px; padding: 10px 14px; border-radius: 14px; border: 1px solid var(--line); background: rgba(255, 209, 102, .05); }
+.air__my span { color: #ffd166; } .air__my b { font-size: 14px; } .air__my small { flex: 1; color: var(--muted); font-size: 12.5px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.air__teach { display: grid; gap: 10px; padding: 14px; border-radius: 16px; border: 1px dashed rgba(41, 231, 255, .4); background: rgba(41, 231, 255, .04); }
+.air__row { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+.air__teach input, .air__teach select { height: 38px; padding: 0 12px; border-radius: 10px; border: 1px solid var(--line); background: rgba(0, 0, 0, .3); color: var(--fg); font: inherit; font-size: 13.5px; outline: 0; }
+.air__teach input[data-name] { flex: 1; min-width: 160px; } .air__url { width: 100%; }
+.air__teach .btn { width: auto; margin: 0; background: linear-gradient(135deg, #ff6ad5, #7c9cff); }
+.air__dots { display: flex; gap: 5px; } .air__dots i { width: 12px; height: 12px; border-radius: 50%; border: 2px solid rgba(255, 106, 213, .6); } .air__dots i.on { background: #ff6ad5; box-shadow: 0 0 10px #ff6ad5; }
+body[data-mode="hacker"] .air__sw, body[data-mode="hacker"] .air__my, body[data-mode="hacker"] .air__teach { border-radius: 2px; }
+@media (max-width: 760px) { .air__grid--face { grid-template-columns: 1fr 1fr; } }
+
+/* price & change spy */
+.spy__stats b { font-size: 22px; }
+.spy__grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 12px; margin-top: 14px; }
+.spy__card { position: relative; display: grid; gap: 10px; padding: 16px; border-radius: 20px; border: 1px solid var(--line); background: rgba(255, 255, 255, .025); transition: border-color .2s, transform .2s; }
+.spy__card:hover { border-color: color-mix(in srgb, var(--accent) 50%, transparent); }
+.spy__card.is-new { border-color: var(--accent); box-shadow: 0 0 0 1px var(--accent), 0 0 30px -10px var(--accent); }
+.spy__card.is-paused { opacity: .55; }
+.spy__card header { display: flex; align-items: center; gap: 10px; min-width: 0; }
+.spy__card header img, .spy__card header > i { width: 22px; height: 22px; flex: none; border-radius: 6px; background: rgba(255, 255, 255, .08); }
+.spy__card header span { flex: 1; min-width: 0; display: grid; }
+.spy__card header b { font-size: 14px; font-weight: 600; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.spy__card header small { font-size: 11.5px; color: var(--muted); }
+.spy__new { flex: none; padding: 2px 8px; border-radius: 99px; font: 700 10.5px var(--mono); font-style: normal; background: var(--accent); color: #0a0a0a; animation: spyPulse 1.6s ease-in-out infinite; }
+@keyframes spyPulse { 50% { box-shadow: 0 0 0 6px color-mix(in srgb, var(--accent) 0%, transparent), 0 0 14px var(--accent); } }
+.spy__val { display: flex; align-items: baseline; flex-wrap: wrap; gap: 4px 10px; font: 700 30px/1.1 var(--mono); letter-spacing: -.02em; }
+.spy__val.is-text { font-family: inherit; font-size: 14px; font-weight: 500; line-height: 1.45; letter-spacing: 0; color: var(--fg); display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden; }
+.spy__chip { padding: 3px 9px; border-radius: 99px; font: 700 12px var(--mono); font-style: normal; }
+.spy__chip small { font-weight: 500; opacity: .75; }
+.spy__chip.is-down { background: rgba(91, 214, 164, .14); color: #5bd6a4; }
+.spy__chip.is-up { background: rgba(255, 107, 107, .14); color: #ff8a80; }
+.spy__spark { width: 100%; height: 54px; }
+.spy__spark polyline { fill: none; stroke: var(--accent); stroke-width: 2; vector-effect: non-scaling-stroke; }
+.spy__spark polygon { fill: color-mix(in srgb, var(--accent) 14%, transparent); stroke: none; }
+.spy__spark circle { fill: var(--accent); }
+.spy__spark.is-down polyline { stroke: #5bd6a4; } .spy__spark.is-down polygon { fill: rgba(91, 214, 164, .12); } .spy__spark.is-down circle { fill: #5bd6a4; }
+.spy__spark--flat { display: grid; place-items: center; height: 54px; border-radius: 12px; border: 1px dashed var(--line); font-size: 12px; color: var(--muted); }
+.spy__was { margin: 0; font-size: 12.5px; color: var(--muted); line-height: 1.45; } .spy__was b { color: var(--fg); font-weight: 600; }
+.spy__err { margin: 0; padding: 8px 10px; border-radius: 10px; background: rgba(255, 107, 107, .08); color: #ff8a80; font-size: 12.5px; }
+.spy__card footer { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 4px 10px; font-size: 11.5px; color: var(--muted); }
+.spy__acts { display: flex; gap: 12px; }
+body[data-mode="hacker"] .spy__card, body[data-mode="hacker"] .spy__chip, body[data-mode="hacker"] .spy__new, body[data-mode="hacker"] .spy__err { border-radius: 2px; }

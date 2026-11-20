@@ -28,6 +28,22 @@ const moodName = (h) => (h > 0.72 ? "happy" : h < 0.35 ? "sad" : "okay");
 async function loadStats() {
   const h = await get("devtab:history", []), t0 = dayStart();
   stats = { done: h.filter((x) => x.action === "completed" && x.time >= t0).length, snoozed: h.filter((x) => x.action === "snoozed" && x.time >= t0).length };
+  // XP: everything you've done together, worked out fresh each time so nothing counts twice
+  const focus = (await get("devtab:focuslog", [])).filter((x) => x.completed).length;
+  const xp = 10 * h.filter((x) => x.action === "completed").length + 15 * focus + 2 * (data.adsEaten || 0) + (data.pets || 0) + 5 * (data.days || 1);
+  stats.xp = xp; stats.focus = focus;
+  const L = globalThis.DevtabPet.levelOf(xp);
+  stats.level = L.level; stats.next = L.next; stats.prev = L.prev;
+  if (data.level && L.level > data.level) levelUp(L.level);
+  if (data.level !== L.level) { data.level = L.level; save(); }
+}
+const form = (lv) => globalThis.DevtabPet.FORMS[C.S().fx.petKind === "cat" ? "cat" : "robot"][lv - 1];
+function levelUp(lv) {
+  setTimeout(() => {
+    puff("✦", 10, "is-star"); B.state = "react"; B.until = performance.now() + 3000; B.react = 1;
+    speak(`LEVEL UP! ${C.S().fx.petName || "Bit"} is now a ${form(lv)} ✨`, 5000);
+    C.toast(`🎉 Level ${lv}: ${C.S().fx.petName || "Bit"} evolved into a ${form(lv)}!`);
+  }, 1500);
 }
 
 /* ---------- life ---------- */
@@ -96,7 +112,7 @@ function step(now) {
   const pose = B.state === "sleep" ? "sleep" : B.state === "react" && mood !== "sad" ? "happy" : B.state === "jump" || B.state === "fall" ? "hop" : B.state === "walk" ? (Math.floor(B.frame / 8) % 2 ? "walk1" : "walk2") : "idle";
   const eye = B.state === "sleep" ? "sleep" : B.state === "react" ? (B.react < 0 ? "sad" : "happy") : B.blink ? "blink" : mood === "happy" && B.frame % 300 < 60 ? "happy" : mood === "sad" ? "sad" : "open";
   if (B.state === "react" && now > B.until) go("idle", now + 1500);
-  paintPet(cv, { pose, eye, blink: B.blink, look: B.look * B.dir, flip: B.dir < 0 }, C.S().fx.petKind, document.body.dataset.mode === "hacker", C.S()[C.S().mode].accent, data.dust);
+  paintPet(cv, { pose, eye, blink: B.blink, look: B.look * B.dir, flip: B.dir < 0 }, C.S().fx.petKind, document.body.dataset.mode === "hacker", C.S()[C.S().mode].accent, data.dust, stats.level || 1);
   el.style.transform = `translate(${Math.round(B.x)}px, ${Math.round(B.y)}px)`;
   el.dataset.mood = mood;
 }
@@ -126,6 +142,8 @@ export async function initPet(ctx) {
   if (!data) data = { born: now, lastSeen: now, dust: 0, pets: 0 };
   const away = (now - (data.lastSeen || now)) / 86400000;
   if (away > 0.5) data.dust = Math.min(1, (data.dust || 0) + (away - 0.5) * 0.3); // neglect gathers dust
+  const today = new Date().toDateString();
+  if (data.lastDay !== today) { data.lastDay = today; data.days = (data.days || 0) + 1; } // a day together
   data.lastSeen = now; await save();
   await loadStats();
 
@@ -160,7 +178,7 @@ export async function initPet(ctx) {
       data.pets = (data.pets || 0) + 1; data.petsToday++;
       if (data.dust > 0.05) { data.dust = Math.max(0, data.dust - 0.34); puff("·", 8, "is-dust"); speak(data.dust > 0.05 ? "Keep going… *sneeze*" : "Sparkly clean! ✨"); }
       else { puff("♥", 3, "is-heart"); B.state = "react"; B.until = performance.now() + 1600; B.react = 1; if (Math.random() < 0.4) speak(["Hehe", "♥", `${name} likes that`, "Purr… I mean, beep."][Math.floor(Math.random() * 4)], 1800); }
-      await save(); tooltip();
+      await save(); await loadStats(); tooltip();
     }
     down = null;
   });
@@ -170,7 +188,7 @@ export async function initPet(ctx) {
     if (!h || !h.length) return;
     const last = h[0]; await loadStats(); tooltip();
     if (Date.now() - last.time > 8000) return;
-    if (last.action === "completed") react("party");
+    if (last.action === "completed") react("party"); // (+10 XP, counted by loadStats)
     else if (last.action === "snoozed") react("sad");
   });
 
@@ -197,6 +215,14 @@ function renderPane(pane) {
           <div><b>${stats.snoozed}</b><span>snoozes today</span></div>
           <div><b>${data.pets || 0}</b><span>times petted</span></div>
           <div><b>${days}</b><span>day${days === 1 ? "" : "s"} together</span></div>
+          <div><b>${data.adsEaten || 0}</b><span>ads eaten</span></div>
+          <div><b>${stats.focus || 0}</b><span>focus sessions</span></div>
+        </div>
+        <div class="petp__lv">
+          <div class="petp__lvh"><b>Level ${stats.level || 1} · ${C.esc(form(stats.level || 1))}</b><span>${stats.xp || 0} XP${stats.next ? ` · ${stats.next - stats.xp} to level ${(stats.level || 1) + 1}` : " · max level"}</span></div>
+          <div class="petp__bar"><i style="width:${stats.next ? Math.round(((stats.xp - stats.prev) / (stats.next - stats.prev)) * 100) : 100}%"></i></div>
+          <div class="petp__forms">${globalThis.DevtabPet.XP.map((x, i) => `<div class="petp__form${i + 1 <= (stats.level || 1) ? " is-got" : ""}${i + 1 === (stats.level || 1) ? " is-now" : ""}"><canvas width="${SIZE}" height="${SIZE}" data-form="${i + 1}"></canvas><b>${C.esc(form(i + 1))}</b><small>${i ? (i + 1 <= (stats.level || 1) ? globalThis.DevtabPet.UNLOCK[C.S().fx.petKind === "cat" ? "cat" : "robot"][i] : x + " XP") : "Start"}</small></div>`).join("")}</div>
+          <p class="note">Earn XP: ✅ task done +10 · 🎯 focus session +15 · 🍪 ad eaten +2 · ♥ pat +1 · 📅 each day together +5</p>
         </div>
         <label class="row">Name <input type="text" maxlength="14" data-pname value="${C.esc(S.fx.petName || "Bit")}"></label>
         <div class="seg"><button type="button" data-kind="robot" aria-pressed="${S.fx.petKind !== "cat"}">🤖 Robot</button><button type="button" data-kind="cat" aria-pressed="${S.fx.petKind === "cat"}">🐱 Cat</button></div>
@@ -208,8 +234,13 @@ function renderPane(pane) {
     </div>`;
   const big = $("[data-big]", pane);
   let f = 0, raf = 0;
-  const anim = () => { raf = requestAnimationFrame(anim); f++; const blink = f % 140 < 6; paintPet(big, { pose: Math.floor(f / 20) % 2 ? "walk1" : "walk2", eye: blink ? "blink" : moodName(happiness()) === "happy" ? (f % 240 < 80 ? "happy" : "open") : moodName(happiness()) === "sad" ? "sad" : "open", blink }, C.S().fx.petKind, document.body.dataset.mode === "hacker", C.S()[C.S().mode].accent, data.dust); };
+  const anim = () => { raf = requestAnimationFrame(anim); f++; const blink = f % 140 < 6; paintPet(big, { pose: Math.floor(f / 20) % 2 ? "walk1" : "walk2", eye: blink ? "blink" : moodName(happiness()) === "happy" ? (f % 240 < 80 ? "happy" : "open") : moodName(happiness()) === "sad" ? "sad" : "open", blink }, C.S().fx.petKind, document.body.dataset.mode === "hacker", C.S()[C.S().mode].accent, data.dust, stats.level || 1); };
   anim();
+  // the evolution line: unlocked forms in colour, locked ones as silhouettes
+  pane.querySelectorAll("[data-form]").forEach((c) => {
+    const lv = +c.dataset.form; paintPet(c, { pose: "idle", eye: "open" }, C.S().fx.petKind, document.body.dataset.mode === "hacker", C.S()[C.S().mode].accent, 0, lv);
+    if (lv > (stats.level || 1)) { const x = c.getContext("2d"); x.globalCompositeOperation = "source-in"; x.fillStyle = "rgba(255,255,255,.18)"; x.fillRect(0, 0, SIZE, SIZE); }
+  });
   pane.addEventListener("click", async (e) => { const k = e.target.closest("[data-kind]"); if (k) { C.S().fx.petKind = k.dataset.kind; pane.querySelectorAll("[data-kind]").forEach((b) => b.setAttribute("aria-pressed", String(b === k))); await C.persist(); } });
   pane.addEventListener("change", async (e) => {
     if (e.target.matches("[data-pshow]")) { C.S().fx.pet = e.target.checked; await C.persist(); drawPet(); }

@@ -19,6 +19,12 @@ if (f && Date.now() < f.endsAt) {
 
 document.querySelector(".tools").addEventListener("click", async (e) => {
   const b = e.target.closest("[data-tool]"); if (!b) return;
+  if (b.dataset.tool === "spy") {
+    // checking later means reading this site from the background, which needs your OK for this one site
+    let origin = null; try { const u = new URL(tab.url); if (/^https?:$/.test(u.protocol)) origin = u.origin + "/*"; } catch (x) {}
+    if (!origin) { $("#err").hidden = false; $("#err").textContent = "The spy works on normal websites (http or https)."; return; }
+    if (!(await chrome.permissions.request({ origins: [origin] }).catch(() => false))) { $("#err").hidden = false; $("#err").textContent = "DevTab needs access to this site to check it for changes later."; return; }
+  }
   if (b.dataset.tool === "shot") { b.querySelector("small").textContent = "Scrolling and capturing…"; document.body.classList.add("is-busy"); }
   const r = await chrome.runtime.sendMessage({ type: "tool", tool: b.dataset.tool, tabId: tab.id });
   if (r && r.ok) window.close();

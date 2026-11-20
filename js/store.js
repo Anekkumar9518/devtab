@@ -35,7 +35,7 @@ export const DEFAULTS = {
   fx: {
     parallax: true, timeTravel: true, particleClock: true, gravity: true, launch: true,
     pet: true, petKind: "robot", petName: "Bit", recall: true, wrapped: false,
-    petEverywhere: false, petHidden: [], air: false,
+    petEverywhere: false, petHidden: [], air: false, faceCtl: false, shield: false, away: false, awaySecs: 60, petEatsAds: true,
   },
   tabs: { autoSleep: 60, keepPinned: true },
   news: { tab: "india", ticker: true },

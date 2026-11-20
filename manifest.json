@@ -2,7 +2,7 @@
   "manifest_version": 3,
   "name": "DevTab: Developer & Hacker New Tab",
   "short_name": "DevTab",
-  "version": "3.0.0",
+  "version": "4.0.0",
   "description": "A developer & hacker new tab: live weather sky, GitHub city, particle clock, focus mode, ambient sounds, workspaces, a tab pet, page tools and reminders that ring.",
   "chrome_url_overrides": {
     "newtab": "newtab.html"
@@ -70,6 +70,9 @@
         "default": "Alt+Shift+4"
       },
       "description": "Download images and videos from this page"
+    },
+    "xray": {
+      "description": "Website X-ray on this page"
     },
     "toggle-air": {
       "description": "Turn Air control (hand gestures) on or off"

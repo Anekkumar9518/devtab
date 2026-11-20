@@ -9,6 +9,8 @@ import "./js/bg/tools.js";
 import "./js/bg/sleeper.js";
 import "./js/bg/everywhere.js";
 import "./js/bg/air.js";
+import "./js/bg/cam.js";
+import "./js/bg/spy.js";
 
 const PREFIX = "task:";
 const W = 440, H = 600;

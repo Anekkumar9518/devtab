@@ -28,7 +28,7 @@ body[data-mode="hacker"] .pet__fx { color: var(--accent); }
 .petp__mood { display: flex; align-items: center; gap: 12px; font-size: 18px; }
 .petp__hearts { color: #ff5c8a; font-size: 20px; letter-spacing: 2px; }
 .petp__hearts i { font-style: normal; color: rgba(255, 255, 255, .15); }
-.petp__stats { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; }
+.petp__stats { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
 .petp__stats div { display: grid; padding: 12px; border-radius: 14px; border: 1px solid var(--line); background: rgba(255, 255, 255, .03); }
 .petp__stats b { font: 700 24px var(--mono); }
 .petp__stats span { font-size: 11.5px; color: var(--muted); }
@@ -94,3 +94,15 @@ body[data-mode="hacker"] .wr__stat, body[data-mode="hacker"] .wr__card, body[dat
   .wr__seg { width: auto; flex: 1; }
   .pet { transform-origin: bottom; }
 }
+
+.petp__lv { display: grid; gap: 10px; padding: 14px; border-radius: 16px; border: 1px solid var(--line); background: radial-gradient(circle at 0% 0%, color-mix(in srgb, var(--accent) 18%, transparent), transparent 60%), rgba(255, 255, 255, .02); }
+.petp__lvh { display: flex; justify-content: space-between; align-items: baseline; gap: 10px; flex-wrap: wrap; }
+.petp__lvh b { font-size: 16px; } .petp__lvh span { font: 12px var(--mono); color: var(--muted); }
+.petp__bar { height: 10px; border-radius: 99px; background: rgba(255, 255, 255, .08); overflow: hidden; }
+.petp__bar i { display: block; height: 100%; border-radius: inherit; background: linear-gradient(90deg, var(--accent), #ffd166); box-shadow: 0 0 14px var(--accent); }
+.petp__forms { display: grid; grid-template-columns: repeat(5, 1fr); gap: 6px; }
+.petp__form { display: grid; justify-items: center; gap: 2px; padding: 8px 4px; border-radius: 12px; border: 1px solid var(--line); text-align: center; opacity: .55; }
+.petp__form.is-got { opacity: 1; } .petp__form.is-now { border-color: var(--accent); box-shadow: 0 0 18px -6px var(--accent); }
+.petp__form canvas { width: 48px; height: 48px; image-rendering: pixelated; }
+.petp__form b { font-size: 11.5px; } .petp__form small { font-size: 10px; color: var(--muted); line-height: 1.3; }
+body[data-mode="hacker"] .petp__lv, body[data-mode="hacker"] .petp__form, body[data-mode="hacker"] .petp__bar { border-radius: 2px; }

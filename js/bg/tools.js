@@ -1,7 +1,7 @@
 // Runs a page tool in the current tab. It uses activeTab, so DevTab only gets
 // into a page when you click its toolbar button or press a tool's shortcut.
-const FILES = { color: "js/inject/color.js", images: "js/inject/images.js", fonts: "js/inject/fonts.js", media: "js/inject/media.js", stack: "js/inject/stack.js" };
-const START = { color: "__devtabColor", images: "__devtabImages", fonts: "__devtabFonts", media: "__devtabMedia", stack: "__devtabStack" };
+const FILES = { color: "js/inject/color.js", images: "js/inject/images.js", fonts: "js/inject/fonts.js", media: "js/inject/media.js", stack: "js/inject/stack.js", xray: "js/inject/xray.js", spy: "js/inject/spy.js" };
+const START = { color: "__devtabColor", images: "__devtabImages", fonts: "__devtabFonts", media: "__devtabMedia", stack: "__devtabStack", xray: "__devtabXray", spy: "__devtabSpy" };
 
 export async function runTool(tool, tab) {
   if (!tab || !/^(https?|file):/i.test(tab.url || "") || /^https:\/\/(chrome|chromewebstore)\.google\.com\/webstore|microsoftedge\.microsoft\.com\/addons/i.test(tab.url || "")) {
@@ -28,7 +28,7 @@ export async function runTool(tool, tab) {
 }
 
 chrome.commands.onCommand.addListener(async (cmd, tab) => {
-  const tool = { "pick-color": "color", "image-size": "images", "font-finder": "fonts", "media-downloader": "media" }[cmd];
+  const tool = { "pick-color": "color", "image-size": "images", "font-finder": "fonts", "media-downloader": "media", "xray": "xray" }[cmd];
   if (!tool) return;
   tab = tab || (await chrome.tabs.query({ active: true, currentWindow: true }))[0];
   const r = await runTool(tool, tab);

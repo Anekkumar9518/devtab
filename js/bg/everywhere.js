@@ -5,7 +5,7 @@ const SETTINGS = "devtab:settings";
 const ALL = ["https://*/*", "http://*/*"];
 const SCRIPTS = {
   pet: { id: "devtab-pet", js: ["js/petdraw.js", "js/inject/pet-anywhere.js"], key: "petEverywhere" },
-  air: { id: "devtab-air", js: ["js/inject/air.js"], key: "air" },
+  air: { id: "devtab-air", js: ["js/inject/air.js"], key: (fx) => fx.air || fx.faceCtl || fx.shield || fx.away },
 };
 
 export async function syncEverywhere() {
@@ -13,7 +13,7 @@ export async function syncEverywhere() {
   const allowed = await chrome.permissions.contains({ origins: ALL });
   const have = new Set((await chrome.scripting.getRegisteredContentScripts()).map((s) => s.id));
   for (const s of Object.values(SCRIPTS)) {
-    const want = allowed && !!fx[s.key];
+    const want = allowed && !!(typeof s.key === "function" ? s.key(fx) : fx[s.key]);
     if (want && !have.has(s.id)) {
       await chrome.scripting.registerContentScripts([{ id: s.id, js: s.js, matches: ALL, runAt: "document_idle", allFrames: false, persistAcrossSessions: true }]).catch(() => {});
       // and start it on the tabs that are already open
@@ -21,7 +21,7 @@ export async function syncEverywhere() {
     } else if (!want && have.has(s.id)) await chrome.scripting.unregisterContentScripts({ ids: [s.id] }).catch(() => {});
   }
 }
-chrome.storage.onChanged.addListener((ch, area) => { if (area === "local" && ch[SETTINGS]) { const o = (ch[SETTINGS].oldValue || {}).fx || {}, n = (ch[SETTINGS].newValue || {}).fx || {}; if (o.petEverywhere !== n.petEverywhere || o.air !== n.air) syncEverywhere(); } });
+chrome.storage.onChanged.addListener((ch, area) => { if (area === "local" && ch[SETTINGS]) { const o = (ch[SETTINGS].oldValue || {}).fx || {}, n = (ch[SETTINGS].newValue || {}).fx || {}; if (["petEverywhere", "air", "faceCtl", "shield", "away", "petEatsAds"].some((k) => o[k] !== n[k])) syncEverywhere(); } });
 chrome.permissions.onAdded.addListener(syncEverywhere);
 chrome.permissions.onRemoved.addListener(syncEverywhere);
 chrome.runtime.onInstalled.addListener(syncEverywhere);
